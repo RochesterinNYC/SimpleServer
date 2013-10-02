@@ -1,6 +1,9 @@
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -51,10 +54,31 @@ public class Server {
         System.out.println("Server is up and listening on port " + serverPort);
         
         while(true){
-        	
+        	Socket socket = serverSocket.accept();
+        	PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+        	Scanner clientInput = new Scanner(new InputStreamReader(socket.getInputStream()));
+        	out.println("Hi! Welcome to SimpleServer!");
+            out.println("Please enter your login info");
+            out.println("Username: ");
+            String userNameAttempt = clientInput.nextLine();
+            out.println("Password: ");
+            String passwordAttempt = clientInput.nextLine();
+            if(loginCorrect(userNameAttempt, passwordAttempt, accounts)){
+            	out.println("Hi! You are now logged in as " + userNameAttempt);
+            }
         }
         
         
+	}
+	
+	private static boolean loginCorrect(String userName, String password, ArrayList<Account> list){
+		boolean loginCorrect = false;
+		for(Account acc : list){
+			if(acc.login(userName, password)){
+				loginCorrect = true;
+			}
+		}
+		return loginCorrect;
 	}
 
 }
