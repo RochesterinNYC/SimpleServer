@@ -52,14 +52,40 @@ public class ServerThread extends Thread{
     		choice = outputFromClient();
     		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("broadcast")){
     			correctCommand = true;
+    			inputToClient("success");
+    			//No String switching in < Java 1.7...
+    			if(choice.trim().equals("whoelse")){
+    				whoelse();
+    			}
+    			else if(choice.trim().equals("wholasthr")){
+    				wholasthr();
+    			}
+    			else if(choice.trim().equals("broadcast")){
+    				
+    			}
     		}
     		else{
+    			inputToClient("failure");
     			inputToClient("Please enter in a correct command.");
     		}
     	}
-    	inputToClient("You chose " + choice);
     }
     
+    public void whoelse(){
+    	String[] users = server.getCurrentUsers();
+    	inputToClient(Integer.toString(users.length));
+    	for (String user : users){
+        	inputToClient(user);   		
+    	}
+    	optionMenu();
+    }
+    
+    public void wholasthr(){
+    	
+    }
+    public void broadcast(){
+    	
+    }
     public void login(){
 		inputToClient("Hi! Welcome to SimpleServer!");
 		inputToClient("Please enter your login info");
@@ -69,6 +95,7 @@ public class ServerThread extends Thread{
 		String passwordAttempt = outputFromClient();
 		if(server.loginCorrect(userNameAttempt, passwordAttempt)){
 			inputToClient("success");
+			server.addToMap(userNameAttempt, this);
 			optionMenu();
 		}
 		else{

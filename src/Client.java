@@ -44,14 +44,43 @@ public class Client extends Thread{
 		return loginSuccessful;
 	}
 	
-	public void menuOptions(){
+	public void optionMenu(){
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
-		inputToServer(localInput.nextLine());
-		System.out.println(outputFromServer());
+		String command = localInput.nextLine();
+		inputToServer(command);
+		if(outputFromServer().equals("success")){
+			if(command.equals("whoelse")){
+				whoelse();
+			}
+			else if (command.equals("wholasthr")){
+				wholasthr();
+			}
+			else if (command.equals("broadcast")){
+				broadcast();
+			}
+		}
+		else if (outputFromServer().equals("failure")){
+			System.out.println(outputFromServer());
+			optionMenu();
+		}
 	}
+	
+    public void whoelse(){
+    	int numUsers = Integer.parseInt(outputFromServer());
+    	for(int i = 0; i < numUsers; i++){
+    		System.out.println(outputFromServer());
+    	}
+    	optionMenu();
+    }
+    public void wholasthr(){
+    	
+    }
+    public void broadcast(){
+    	
+    }
 
 }

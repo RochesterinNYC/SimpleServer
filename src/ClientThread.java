@@ -9,7 +9,7 @@ public class ClientThread extends Thread{
 	
 	public void run(){
 		if(client.login()){
-	    	client.menuOptions();
+	    	client.optionMenu();
 		}
 	}
 	
