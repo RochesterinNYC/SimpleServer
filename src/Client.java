@@ -6,18 +6,40 @@ import java.util.Scanner;
 
 
 public class Client extends Thread{
+    private Scanner localInput;
+    private PrintWriter serverOutput;
+    private Scanner clientInput;
+    private Socket conn;
 	
-	public static void main(String[] args) throws IOException {
-		Socket conn = new Socket(args[0], Integer.parseInt(args[1]));
-		Scanner localInput = new Scanner(System.in);
-		PrintWriter serverOut = new PrintWriter(conn.getOutputStream(), true);
-    	Scanner clientInput = new Scanner(new InputStreamReader(conn.getInputStream()));
+    public Client(String host, int portNumber) throws IOException{
+    	conn = new Socket(host, portNumber);
+		localInput = new Scanner(System.in);
+		serverOutput = new PrintWriter(conn.getOutputStream(), true);
+    	clientInput = new Scanner(new InputStreamReader(conn.getInputStream()));
+    }
+    
+	public void run(){
+    	login();
+    	menuOptions();
+	}
+	
+	public void login(){
 		System.out.println(clientInput.nextLine());
 		System.out.println(clientInput.nextLine());
 		System.out.println(clientInput.nextLine());
-		serverOut.println(localInput.nextLine());
+		serverOutput.println(localInput.nextLine());
 		System.out.println(clientInput.nextLine());
-		serverOut.println(localInput.nextLine());
+		serverOutput.println(localInput.nextLine());
+		System.out.println(clientInput.nextLine());
+	}
+	
+	public void menuOptions(){
+		System.out.println(clientInput.nextLine());
+		System.out.println(clientInput.nextLine());
+		System.out.println(clientInput.nextLine());
+		System.out.println(clientInput.nextLine());
+		System.out.println(clientInput.nextLine());
+		serverOutput.println(localInput.nextLine());
 		System.out.println(clientInput.nextLine());
 	}
 
