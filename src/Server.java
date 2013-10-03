@@ -8,13 +8,11 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class Server extends Thread {
+public class Server {
 	
 	private ArrayList<Account> accounts;
 	private ServerSocket serverSocket;
-	private Socket clientSocket;
-	private PrintWriter serverOutput;
-	private Scanner clientInput;
+	
 	public Server(int serverPort) throws IOException{
 		setupLogin(); 
 		try {
@@ -29,58 +27,12 @@ public class Server extends Thread {
 	        System.exit(1);
 	    }
 	    System.out.println("Server is up and listening on port " + serverPort);
-	    run();
 	}
-	public Server (ArrayList<Account>accounts, ServerSocket serverSocket){
-		this.accounts = accounts;
-		this.serverSocket = serverSocket;
-	}
-    public void run(){   
-        while(true){
-        	try {
-        		clientSocket = serverSocket.accept();
-        		Server s = new Server(accounts, serverSocket);
-        		Thread t = new Thread(s);
-        		t.start();
-        		System.out.println(this.toString());
-        		serverOutput = new PrintWriter(clientSocket.getOutputStream(), true);
-        		clientInput = new Scanner(new InputStreamReader(clientSocket.getInputStream()));
-        		serverOutput.println("Hi! Welcome to SimpleServer!");
-        		serverOutput.println("Please enter your login info");
-        		serverOutput.println("Username: ");
-        		String userNameAttempt = clientInput.nextLine();
-        		serverOutput.println("Password: ");
-        		String passwordAttempt = clientInput.nextLine();
-        		if(loginCorrect(userNameAttempt, passwordAttempt, accounts)){
-        			serverOutput.println("Hi! You are now logged into SimpleServer as " + userNameAttempt);
-        		}
-        		optionMenu();
-        	}
-        	catch (IOException e){
-        		System.exit(1);
-        	}
-        }
-	}
-	
-    private void optionMenu(){
-    	String choice = "";
-    	boolean correctCommand = false;
-    	while (!correctCommand){
-    		serverOutput.println("These are your options:");
-    		serverOutput.println("- Enter 'whoelse' to see what other users are connected on this server.");
-    		serverOutput.println("- Enter 'wholasthr' to see who else is on this server.");
-    		serverOutput.println("- Enter 'broadcast' to broadcast a message to all connected users.");
-    		serverOutput.println("What would you like to do?");
-    		choice = clientInput.nextLine();
-    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("broadcast")){
-    			correctCommand = true;
-    		}
-    		else{
-    			serverOutput.println("Please enter in a correct command.");
-    		}
-    	}
-    	serverOutput.println("You chose " + choice);
+    
+    public ServerSocket getServerSocket(){
+    	return serverSocket;
     }
+    
 	private void setupLogin() throws FileNotFoundException{
 		Scanner passwordParse = new Scanner(new FileReader("passwords.txt"));
 		String userName = "";
@@ -95,9 +47,10 @@ public class Server extends Thread {
 		}
 	}
 	
-	private boolean loginCorrect(String userName, String password, ArrayList<Account> list){
+	public boolean loginCorrect(String userName, String password){
+		System.out.println("Attempted login with username " + userName + " and password " + password);
 		boolean loginCorrect = false;
-		for(Account acc : list){
+		for(Account acc : accounts){
 			if(acc.login(userName, password)){
 				loginCorrect = true;
 			}
