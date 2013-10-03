@@ -10,6 +10,7 @@ public class ServerThread extends Thread{
 	private PrintWriter serverToClient;
 	private Scanner clientToServer;
 	private Socket clientSocket;
+	private String userName;
 	
 	public ServerThread(Server server){
 		this.server = server;
@@ -46,7 +47,7 @@ public class ServerThread extends Thread{
     	while (!correctCommand){ 		
     		inputToClient("These are your options:");
     		inputToClient("- Enter 'whoelse' to see what other users are connected on this server.");
-    		inputToClient("- Enter 'wholasthr' to see who else is on this server.");
+    		inputToClient("- Enter 'wholasthr' to see what users have connected within the last hour.");
     		inputToClient("- Enter 'broadcast' to broadcast a message to all connected users.");
     		inputToClient("What would you like to do?");
     		choice = outputFromClient();
@@ -72,10 +73,21 @@ public class ServerThread extends Thread{
     }
     
     public void whoelse(){
+    	boolean userScreened = false;
     	String[] users = server.getCurrentUsers();
-    	inputToClient(Integer.toString(users.length));
+    	inputToClient(Integer.toString(users.length - 1));
     	for (String user : users){
-        	inputToClient(user);   		
+    		if(user.equals(userName)){
+    			if(userScreened){
+    				inputToClient(user);   
+    			}
+    			else{
+    				userScreened = true;
+    			}
+    		}
+    		else{
+    			inputToClient(user);
+    		}	
     	}
     	optionMenu();
     }
@@ -86,6 +98,10 @@ public class ServerThread extends Thread{
     public void broadcast(){
     	
     }
+    
+    public String getUserName(){
+    	return userName;
+    }
     public void login(){
 		inputToClient("Hi! Welcome to SimpleServer!");
 		inputToClient("Please enter your login info");
@@ -95,7 +111,8 @@ public class ServerThread extends Thread{
 		String passwordAttempt = outputFromClient();
 		if(server.loginCorrect(userNameAttempt, passwordAttempt)){
 			inputToClient("success");
-			server.addToMap(userNameAttempt, this);
+			this.userName = userNameAttempt;
+			server.addToClients(this);
 			optionMenu();
 		}
 		else{
