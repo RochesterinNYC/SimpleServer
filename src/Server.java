@@ -14,6 +14,9 @@ public class Server {
 	private ArrayList<Account> accounts;
 	private ServerSocket serverSocket;
 	private ArrayList<ServerThread> currentClients;
+	private boolean baseWaiting;
+	private ArrayList<ServerThread> broadcastThreads;
+	private String broadcast;
 	
 	public Server(int serverPort) throws IOException{
 		setupLogin();
@@ -28,8 +31,38 @@ public class Server {
 	        System.err.println("Can not listen on port: " + serverPort);
 	        System.exit(1);
 	    }
-		currentClients = new ArrayList<ServerThread>();		
+		currentClients = new ArrayList<ServerThread>();	
+		baseWaiting = true;
 	    System.out.println("Server is up and listening on port " + serverPort);
+	}
+	
+	public void setBroadcast(String broadcast){
+		this.broadcast = broadcast;
+	}
+	public String getBroadcast(){
+		return this.broadcast;
+	}
+	public void broadcast(){
+		synchronized(this){
+    		this.notifyAll();
+    	}
+	}
+	
+	public void waitThread(ServerThread thread){
+		synchronized(thread){
+			try {
+				thread.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public boolean getBaseWaiting(){
+		return baseWaiting;
+	}
+	public void setBaseWaiting(boolean isWaiting){
+		baseWaiting = isWaiting;
 	}
 	
 	public void addToClients(ServerThread newClient){

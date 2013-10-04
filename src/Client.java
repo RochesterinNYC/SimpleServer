@@ -10,17 +10,30 @@ public class Client extends Thread{
     private PrintWriter clientToServer;
     private Scanner serverToClient;
     private Socket conn;
+    private String host;
+    private int portNumber;
 	public void inputToServer(String input){
 		clientToServer.println(input);
 	}
     public String outputFromServer(){
     	return serverToClient.nextLine();
 	}
+    public Socket getConn(){
+    	return conn;
+    }
     public Client(String host, int portNumber) throws IOException{
     	conn = new Socket(host, portNumber);
 		localInput = new Scanner(System.in);
 		clientToServer = new PrintWriter(conn.getOutputStream(), true);
 		serverToClient = new Scanner(new InputStreamReader(conn.getInputStream()));
+		this.host = host;
+		this.portNumber = portNumber;
+    }
+    public int getPortNumber(){
+    	return this.portNumber;
+    }
+    public String getHost(){
+    	return this.host;
     }
 	
 	public boolean login(){
@@ -34,6 +47,7 @@ public class Client extends Thread{
 		inputToServer(localInput.nextLine());
 		//Response Message from Server
 		String responseMessage = outputFromServer();
+		System.out.println(responseMessage);
 		if(responseMessage.equals("success")){
 			loginSuccessful = true;
 			System.out.println("Hi! You are now logged into SimpleServer as " + userName);
@@ -78,9 +92,13 @@ public class Client extends Thread{
     }
     public void wholasthr(){
     	
+    	
     }
     public void broadcast(){
-    	
+    	System.out.println(outputFromServer());
+    	inputToServer(localInput.nextLine());
+    	System.out.println(outputFromServer());
+    	optionMenu();
     }
 
 }

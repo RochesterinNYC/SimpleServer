@@ -11,27 +11,52 @@ public class ServerThread extends Thread{
 	private Scanner clientToServer;
 	private Socket clientSocket;
 	private String userName;
+	private ServerThreadType threadType;
 	
 	public ServerThread(Server server){
 		this.server = server;
+		this.threadType = ServerThreadType.BASE;
 	}
-	public ServerThread(Server server, Socket clientSocket) throws IOException{
+	public ServerThread(Server server, Socket clientSocket, ServerThreadType type) throws IOException{
 		this.server = server;
 		this.clientSocket = clientSocket;
 		this.serverToClient = new PrintWriter(this.clientSocket.getOutputStream(), true);
 		this.clientToServer = new Scanner(new InputStreamReader(this.clientSocket.getInputStream()));
+		this.threadType = type;
 	}
-	
+
 	public void serverListen() throws IOException{
 		while(true){
+			//Login and client handler thread
 			Socket newSocket = server.getServerSocket().accept();
-			ServerThread st = new ServerThread(server, newSocket);
+			ServerThread st;
+			if(server.getBaseWaiting()){
+				st = new ServerThread(server, newSocket, ServerThreadType.CLIENT);
+			}
+			else{
+				st = new ServerThread(server, newSocket, ServerThreadType.BROADCAST);
+			}
     		st.start();
 		}
 	}
 	
+	
 	public void run(){
-    	login();
+		if (this.threadType == ServerThreadType.BROADCAST){
+			server.setBaseWaiting(true);
+			while(true){
+				server.waitThread(this);
+				inputToClient(server.getBroadcast());
+			}
+		}
+		else if (this.threadType == ServerThreadType.CLIENT){
+	    	try{
+	    		login();
+	    	}
+	    	catch(IOException e){
+	    		
+	    	}
+		}
 	}
 	
 	public void inputToClient(String input){
@@ -62,7 +87,7 @@ public class ServerThread extends Thread{
     				wholasthr();
     			}
     			else if(choice.trim().equals("broadcast")){
-    				
+    				broadcast();
     			}
     		}
     		else{
@@ -96,13 +121,17 @@ public class ServerThread extends Thread{
     	
     }
     public void broadcast(){
-    	
+    	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
+    	server.setBroadcast(outputFromClient());
+    	server.broadcast();
+    	inputToClient("Your message was broadcasted.");
+    	optionMenu();
     }
     
     public String getUserName(){
     	return userName;
     }
-    public void login(){
+    public void login() throws IOException{
 		inputToClient("Hi! Welcome to SimpleServer!");
 		inputToClient("Please enter your login info");
 		inputToClient("Username: ");
@@ -113,6 +142,8 @@ public class ServerThread extends Thread{
 			inputToClient("success");
 			this.userName = userNameAttempt;
 			server.addToClients(this);
+			//Broadcaster Thread
+			server.setBaseWaiting(false);
 			optionMenu();
 		}
 		else{
