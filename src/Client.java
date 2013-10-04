@@ -110,8 +110,11 @@ public class Client extends Thread{
     	optionMenu();
     }
     public void wholasthr(){
-    	
-    	
+    	int numUsers = Integer.parseInt(outputFromServer());
+    	for(int i = 0; i < numUsers; i++){
+    		System.out.println(outputFromServer());
+    	}
+    	optionMenu();
     }
     public void broadcast(){
     	System.out.println(outputFromServer());

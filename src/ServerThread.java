@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 
@@ -125,7 +126,12 @@ public class ServerThread extends Thread{
     }
     
     public void wholasthr(){
-    	
+    	ArrayList<String> users = server.getUsersLastHr();
+    	inputToClient(Integer.toString(users.size()));
+    	for (String user : users){
+    		inputToClient(user);   
+    	}
+    	optionMenu();
     }
     public void broadcast(){
     	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
@@ -167,7 +173,5 @@ public class ServerThread extends Thread{
     			inputToClient("failure");
     		}
 		}
-		
 	}
-
 }

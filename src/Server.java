@@ -115,6 +115,21 @@ public class Server {
 		}
 		return currentUsers;
 	}
+	
+	public ArrayList<String> getUsersLastHr(){
+		ArrayList<String> currentUsers = new ArrayList<String>();
+		for (Account account : accounts){
+			if (System.currentTimeMillis() - account.getLastLoginTime() < 3600000){
+				if(account.isLoggedIn()){
+					currentUsers.add(account.getUserName() + " - active");
+				}
+				else{
+					currentUsers.add(account.getUserName());
+				}
+			}
+		}
+		return currentUsers;
+	}
     
     public ServerSocket getServerSocket(){
     	return serverSocket;
@@ -140,9 +155,9 @@ public class Server {
 		for(Account acc : accounts){
 			if(acc.login(userName, password)){
 				loginCorrect = true;
+				acc.markLoginStatus(true);
 			}
 		}
 		return loginCorrect;
 	}
-
 }
