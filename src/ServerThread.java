@@ -46,8 +46,7 @@ public class ServerThread extends Thread{
 		if(server.isBlocked(clientSocket.getInetAddress())){
 			inputToClient("ip blocked");
 		}
-		else{
-			inputToClient("ip not blocked");
+		else{			
 			if (this.threadType == ServerThreadType.BROADCAST){
 				server.setBaseWaiting(true);
 				while(true){
@@ -56,6 +55,7 @@ public class ServerThread extends Thread{
 				}
 			}
 			else if (this.threadType == ServerThreadType.CLIENT){
+				inputToClient("ip not blocked");
 				try{
 					login();
 				}
@@ -162,7 +162,6 @@ public class ServerThread extends Thread{
     		else if (loginAttempts >= 3){
     			inputToClient("blocked");
     			server.blockIP(clientSocket.getInetAddress());
-    			System.out.println("User blocked.");
     		}
     		else {
     			inputToClient("failure");

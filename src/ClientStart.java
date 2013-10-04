@@ -5,5 +5,4 @@ public class ClientStart {
 		ClientThread clientStart = new ClientThread(new Client(args[0], Integer.parseInt(args[1])));
 		clientStart.begin();
 	}
-
 }

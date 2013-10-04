@@ -9,7 +9,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import static java.util.concurrent.TimeUnit.*;
 public class Server {
 	
 	private ArrayList<Account> accounts;
@@ -18,7 +21,11 @@ public class Server {
 	private boolean baseWaiting;
 	private ArrayList<ServerThread> broadcastThreads;
 	private String broadcast;
-	private ArrayList<InetAddress> blockedIPs;
+	private ArrayList<BlockedIP> blockedIPs;
+	
+	private ScheduledExecutorService scheduler;
+	private ScheduledFuture<?> unblockerHandle;	       
+	
 	
 	public Server(int serverPort) throws IOException{
 		setupLogin();
@@ -34,9 +41,18 @@ public class Server {
 	        System.exit(1);
 	    }
 		currentClients = new ArrayList<ServerThread>();
-		blockedIPs = new ArrayList<InetAddress>();
+		blockedIPs = new ArrayList<BlockedIP>();
 		baseWaiting = true;
 	    System.out.println("Server is up and listening on port " + serverPort);
+	    setUpUnblocker();
+	}
+	public void setUpUnblocker(){
+	    scheduler = Executors.newScheduledThreadPool(1);
+	    unblockerHandle = scheduler.scheduleAtFixedRate(new Unblocker(this), 1, 1, SECONDS);
+	}
+	
+	public ArrayList<BlockedIP> getBlockedIPs(){
+		return blockedIPs;
 	}
 	
 	public void setBroadcast(String broadcast){
@@ -63,8 +79,8 @@ public class Server {
 	
 	public boolean isBlocked(InetAddress ip){
 		boolean isBlocked = false;
-		for(InetAddress ipAddress : blockedIPs){
-			if(ip.toString().equals(ipAddress.toString())){
+		for(BlockedIP client : blockedIPs){
+			if(ip.toString().equals(client.getIP().toString())){
 				isBlocked = true;
 			}
 		}
@@ -72,7 +88,12 @@ public class Server {
 	}
 	
 	public void blockIP(InetAddress ip){
-		blockedIPs.add(ip);
+		blockedIPs.add(new BlockedIP(ip));
+		System.out.println("IP Address " + ip.toString() + " is now blocked for 60 seconds");
+	}
+	
+	public void removeBlockedIP(BlockedIP ip){
+		blockedIPs.remove(ip);
 	}
 	
 	public boolean getBaseWaiting(){
