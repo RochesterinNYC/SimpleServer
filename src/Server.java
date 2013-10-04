@@ -1,6 +1,7 @@
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ public class Server {
 	private boolean baseWaiting;
 	private ArrayList<ServerThread> broadcastThreads;
 	private String broadcast;
+	private ArrayList<InetAddress> blockedIPs;
 	
 	public Server(int serverPort) throws IOException{
 		setupLogin();
@@ -31,7 +33,8 @@ public class Server {
 	        System.err.println("Can not listen on port: " + serverPort);
 	        System.exit(1);
 	    }
-		currentClients = new ArrayList<ServerThread>();	
+		currentClients = new ArrayList<ServerThread>();
+		blockedIPs = new ArrayList<InetAddress>();
 		baseWaiting = true;
 	    System.out.println("Server is up and listening on port " + serverPort);
 	}
@@ -56,6 +59,20 @@ public class Server {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public boolean isBlocked(InetAddress ip){
+		boolean isBlocked = false;
+		for(InetAddress ipAddress : blockedIPs){
+			if(ip.toString().equals(ipAddress.toString())){
+				isBlocked = true;
+			}
+		}
+		return isBlocked;
+	}
+	
+	public void blockIP(InetAddress ip){
+		blockedIPs.add(ip);
 	}
 	
 	public boolean getBaseWaiting(){

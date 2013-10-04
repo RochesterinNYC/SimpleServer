@@ -14,7 +14,11 @@ public class ClientThread extends Thread{
 	}
 	
 	public void begin(){
-		if(client.login()){
+		if(client.checkIPBlocked()){
+			System.out.println("This IP Address is currently blocked due to repeated failed login attempts.");
+			System.out.println("Please wait until the 60 seconds are up to try again.");
+		}
+		else if(client.login()){
 			ClientThread ct = new ClientThread(client);
 			ct.start();
 	    	client.optionMenu();
@@ -22,6 +26,7 @@ public class ClientThread extends Thread{
 	}
 	
 	public void run() {
+		//Broadcast channel
 		try {
 			Socket broadcastSocket = new Socket(client.getHost(), client.getPortNumber());
 			Scanner broadcastToClient = new Scanner(new InputStreamReader(broadcastSocket.getInputStream()));

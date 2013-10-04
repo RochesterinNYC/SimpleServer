@@ -42,20 +42,27 @@ public class ServerThread extends Thread{
 	
 	
 	public void run(){
-		if (this.threadType == ServerThreadType.BROADCAST){
-			server.setBaseWaiting(true);
-			while(true){
-				server.waitThread(this);
-				inputToClient(server.getBroadcast());
-			}
+		//Check is client's IP is currently blocked
+		if(server.isBlocked(clientSocket.getInetAddress())){
+			inputToClient("ip blocked");
 		}
-		else if (this.threadType == ServerThreadType.CLIENT){
-	    	try{
-	    		login();
-	    	}
-	    	catch(IOException e){
+		else{
+			inputToClient("ip not blocked");
+			if (this.threadType == ServerThreadType.BROADCAST){
+				server.setBaseWaiting(true);
+				while(true){
+					server.waitThread(this);
+					inputToClient(server.getBroadcast());
+				}
+			}
+			else if (this.threadType == ServerThreadType.CLIENT){
+				try{
+					login();
+				}
+				catch(IOException e){
 	    		
-	    	}
+				}
+			}
 		}
 	}
 	
@@ -132,23 +139,36 @@ public class ServerThread extends Thread{
     	return userName;
     }
     public void login() throws IOException{
-		inputToClient("Hi! Welcome to SimpleServer!");
-		inputToClient("Please enter your login info");
-		inputToClient("Username: ");
-		String userNameAttempt = outputFromClient();
-		inputToClient("Password: ");
-		String passwordAttempt = outputFromClient();
-		if(server.loginCorrect(userNameAttempt, passwordAttempt)){
-			inputToClient("success");
-			this.userName = userNameAttempt;
-			server.addToClients(this);
-			//Broadcaster Thread
-			server.setBaseWaiting(false);
-			optionMenu();
+		boolean loginSuccess = false;
+		int loginAttempts = 0;
+    	while(!loginSuccess && loginAttempts < 3){
+    		inputToClient("Hi! Welcome to SimpleServer!");
+    		inputToClient("Please enter your login info.");
+    		inputToClient("Username: ");
+    		String userNameAttempt = outputFromClient();
+    		inputToClient("Password: ");
+    		String passwordAttempt = outputFromClient();
+    		loginSuccess = server.loginCorrect(userNameAttempt, passwordAttempt);
+    		loginAttempts++;
+    		if (loginSuccess){
+    			inputToClient("success");
+    			this.userName = userNameAttempt;
+    			server.addToClients(this);
+    			//Broadcaster Thread
+    			server.setBaseWaiting(false);
+    			System.out.println("Login Successful. User " + this.userName + "logged in");
+    			optionMenu();
+    		}
+    		else if (loginAttempts >= 3){
+    			inputToClient("blocked");
+    			server.blockIP(clientSocket.getInetAddress());
+    			System.out.println("User blocked.");
+    		}
+    		else {
+    			inputToClient("failure");
+    		}
 		}
-		else{
-			inputToClient("failure");
-		}
+		
 	}
 
 }
