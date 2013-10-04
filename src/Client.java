@@ -66,7 +66,8 @@ public class Client extends Thread{
 		System.out.println(outputFromServer());
 		String command = localInput.nextLine();
 		inputToServer(command);
-		if(outputFromServer().equals("success")){
+		String serverResponse = outputFromServer();
+		if(serverResponse.equals("success")){
 			if(command.equals("whoelse")){
 				whoelse();
 			}
@@ -77,7 +78,7 @@ public class Client extends Thread{
 				broadcast();
 			}
 		}
-		else if (outputFromServer().equals("failure")){
+		else if (serverResponse.equals("failure")){
 			System.out.println(outputFromServer());
 			optionMenu();
 		}
