@@ -82,9 +82,10 @@ public class ServerThread extends Thread{
     		inputToClient("- Enter 'whoelse' to see what other users are connected on this server.");
     		inputToClient("- Enter 'wholasthr' to see what users have connected within the last hour.");
     		inputToClient("- Enter 'broadcast' to broadcast a message to all connected users.");
+    		inputToClient("- Enter 'logout' to logout from this account.");
     		inputToClient("What would you like to do?");
     		choice = outputFromClient();
-    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("broadcast")){
+    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("broadcast") || choice.trim().equals("logout")){
     			correctCommand = true;
     			inputToClient("success");
     			//No String switching in < Java 1.7...
@@ -97,12 +98,21 @@ public class ServerThread extends Thread{
     			else if(choice.trim().equals("broadcast")){
     				broadcast();
     			}
+    			else if(choice.trim().equals("logout")){
+    				logout();
+    			}
     		}
     		else{
     			inputToClient("failure");
     			inputToClient("Please enter in a correct command.");
     		}
     	}
+    }
+    
+    public void logout(){
+    	server.logout(this);
+    	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
+    	inputToClient("Have a nice day!");
     }
     
     public void whoelse(){

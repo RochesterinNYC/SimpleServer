@@ -149,6 +149,25 @@ public class Server {
 		}
 	}
 	
+	public void logout(ServerThread client){
+		currentClients.remove(client);
+		boolean userNameStillUsed = false;
+		for(ServerThread thread : currentClients){
+			if (thread.getUserName().equals(client.getUserName())){
+				userNameStillUsed = true;
+			}
+		}
+		//Client was only one using the username
+		if(!userNameStillUsed){
+			//Mark that account as not logged in anymore
+			for(Account account : accounts){
+				if (account.getUserName().equals(client.getUserName())){
+					account.markLoginStatus(false);
+				}
+			}
+		}
+	}
+	
 	public boolean loginCorrect(String userName, String password){
 		System.out.println("Attempted login with username " + userName + " and password " + password);
 		boolean loginCorrect = false;

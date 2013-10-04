@@ -82,6 +82,7 @@ public class Client extends Thread{
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
 		String command = localInput.nextLine();
 		inputToServer(command);
 		String serverResponse = outputFromServer();
@@ -95,11 +96,19 @@ public class Client extends Thread{
 			else if (command.equals("broadcast")){
 				broadcast();
 			}
+			else if (command.equals("logout")){
+				logout();
+			}
 		}
 		else if (serverResponse.equals("failure")){
 			System.out.println(outputFromServer());
 			optionMenu();
 		}
+	}
+	
+	public void logout(){
+		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
 	}
 	
     public void whoelse(){
