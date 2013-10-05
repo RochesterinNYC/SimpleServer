@@ -19,11 +19,8 @@ public class Server {
 	private ArrayList<Account> accounts;
 	private ServerSocket serverSocket;
 	private ArrayList<ServerThread> currentClients;
-	private boolean baseWaiting;
-	private ArrayList<ServerThread> broadcastThreads;
 	private String broadcast;
 	private ArrayList<BlockedIP> blockedIPs;
-	
 	private ScheduledExecutorService scheduler;
 	private ScheduledFuture<?> unblockerHandle;	       
 	
@@ -34,6 +31,9 @@ public class Server {
 	}
 	public int getNumLoginAttempts(){
 		return numLoginAttempts;
+	}
+	public void closeLogger(){
+		logger.close();
 	}
 	
 	public void printLog(String logMessage){
@@ -55,7 +55,6 @@ public class Server {
 	    }
 		currentClients = new ArrayList<ServerThread>();
 		blockedIPs = new ArrayList<BlockedIP>();
-		baseWaiting = true;
 		logger = new PrintWriter(new BufferedWriter(new FileWriter("server_log.txt", true)));
 	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
@@ -108,13 +107,6 @@ public class Server {
 	
 	public void removeBlockedIP(BlockedIP ip){
 		blockedIPs.remove(ip);
-	}
-	
-	public boolean getBaseWaiting(){
-		return baseWaiting;
-	}
-	public void setBaseWaiting(boolean isWaiting){
-		baseWaiting = isWaiting;
 	}
 	
 	public void addToClients(ServerThread newClient){

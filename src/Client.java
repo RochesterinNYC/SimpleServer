@@ -5,7 +5,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 
-public class Client extends Thread{
+public class Client {
     private Scanner localInput;
     private PrintWriter clientToServer;
     private Scanner serverToClient;
@@ -82,7 +82,6 @@ public class Client extends Thread{
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
-		System.out.println(outputFromServer());
 		String command = localInput.nextLine();
 		inputToServer(command);
 		String serverResponse = outputFromServer();
@@ -92,9 +91,6 @@ public class Client extends Thread{
 			}
 			else if (command.equals("wholasthr")){
 				wholasthr();
-			}
-			else if (command.equals("broadcast")){
-				broadcast();
 			}
 			else if (command.equals("logout")){
 				logout();
@@ -123,12 +119,6 @@ public class Client extends Thread{
     	for(int i = 0; i < numUsers; i++){
     		System.out.println(outputFromServer());
     	}
-    	optionMenu();
-    }
-    public void broadcast(){
-    	System.out.println(outputFromServer());
-    	inputToServer(localInput.nextLine());
-    	System.out.println(outputFromServer());
     	optionMenu();
     }
 

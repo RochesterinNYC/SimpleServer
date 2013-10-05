@@ -33,12 +33,7 @@ public class ServerThread extends Thread{
 			//Login and client handler thread
 			Socket newSocket = server.getServerSocket().accept();
 			ServerThread st;
-			if(server.getBaseWaiting()){
-				st = new ServerThread(server, newSocket, ServerThreadType.CLIENT);
-			}
-			else{
-				st = new ServerThread(server, newSocket, ServerThreadType.BROADCAST);
-			}
+			st = new ServerThread(server, newSocket, ServerThreadType.CLIENT);
     		st.start();
 		}
 	}
@@ -52,14 +47,7 @@ public class ServerThread extends Thread{
 			inputToClient("ip blocked");
 		}
 		else{			
-			if (this.threadType == ServerThreadType.BROADCAST){
-				server.setBaseWaiting(true);
-				while(true){
-					server.waitThread(this);
-					inputToClient(server.getBroadcast());
-				}
-			}
-			else if (this.threadType == ServerThreadType.CLIENT){
+			if (this.threadType == ServerThreadType.CLIENT){
 				inputToClient("ip not blocked");
 				try{
 					login();
@@ -85,11 +73,10 @@ public class ServerThread extends Thread{
     		inputToClient("These are your options:");
     		inputToClient("- Enter 'whoelse' to see what other users are connected on this server.");
     		inputToClient("- Enter 'wholasthr' to see what users have connected within the last hour.");
-    		inputToClient("- Enter 'broadcast' to broadcast a message to all connected users.");
     		inputToClient("- Enter 'logout' to logout from this account.");
     		inputToClient("What would you like to do?");
     		choice = outputFromClient();
-    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("broadcast") || choice.trim().equals("logout")){
+    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("logout")){
     			correctCommand = true;
     			inputToClient("success");
     			//No String switching in < Java 1.7...
@@ -98,9 +85,6 @@ public class ServerThread extends Thread{
     			}
     			else if(choice.trim().equals("wholasthr")){
     				wholasthr();
-    			}
-    			else if(choice.trim().equals("broadcast")){
-    				broadcast();
     			}
     			else if(choice.trim().equals("logout")){
     				logout();
@@ -148,13 +132,6 @@ public class ServerThread extends Thread{
     	}
     	optionMenu();
     }
-    public void broadcast(){
-    	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
-    	server.setBroadcast(outputFromClient());
-    	server.broadcast();
-    	inputToClient("Your message was broadcasted.");
-    	optionMenu();
-    }
     
     public String getUserName(){
     	return userName;
@@ -175,8 +152,6 @@ public class ServerThread extends Thread{
     			inputToClient("success");
     			this.userName = userNameAttempt;
     			server.addToClients(this);
-    			//Broadcaster Thread
-    			server.setBaseWaiting(false);
     			server.printLog("Login Successful. User " + this.userName + " logged in");
     			optionMenu();
     		}

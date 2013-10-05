@@ -13,12 +13,14 @@ public class ConsoleThread extends Thread{
 		this.commandList = new String[]{"help", "blocked_ips", 
 			"unblock_all", "accounts", "view_blocktime","change_blocktime",
 			"view_number_login_attempts", "change_number_login_attempts",
-			"number_threads", "current_ips","last_hr", "version"};
+			"number_threads", "current_ips","last_hr", "version", "shut_logger"};
 	}
 	
 	public void run(){
 		consoleScanner = new Scanner(System.in);
 		consolePrint("Welcome to SimpleServer v1.0! Enter 'help' for a list of commands.");
+		consolePrint("Please also remember to shut the logger ('shut_logger') before you exit!");
+		
 		prompt();
 	}
 	
@@ -82,6 +84,9 @@ public class ConsoleThread extends Thread{
 			else if(command.equals("version")){
 				version();
 			}
+			else if(command.equals("shut_logger")){
+				shutLogger();
+			}
 		}
 		catch (Exception e){
 			commandComplete = false;
@@ -113,6 +118,8 @@ public class ConsoleThread extends Thread{
 		consolePrint("- View the usernames used by clients currently connected.");
 		consolePrint("version");
 		consolePrint("- View the version of this server.");
+		consolePrint("shut_logger");
+		consolePrint("- Safely close the logging stream.");
 	}
 	private void viewBlockedIPs(){
 		ArrayList<BlockedIP> blockedIPs = server.getBlockedIPs();
@@ -167,6 +174,11 @@ public class ConsoleThread extends Thread{
 	}
 	private void version(){
 		consolePrint("Simple Server version is 1.0");
+	}
+	private void shutLogger(){
+		consolePrint("Logger was safely closed");
+		server.closeLogger();
+		consolePrint("You may now close the server");
 	}
 	private void consolePrint(String print){
 		System.out.println("    " + print);

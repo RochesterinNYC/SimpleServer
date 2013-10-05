@@ -1,10 +1,12 @@
-[ 1380938621757 ] - Server is up and listening on port 9998
-[ 1380938639081 ] - Attempted login with username Fd and password Fd
-[ 1380938639921 ] - Attempted login with username f and password FD
-[ 1380938640554 ] - Attempted login with username fD and password fD
-[ 1380938640555 ] - IP Address /127.0.0.1 is now blocked for 60000 seconds
-[ 1380938991946 ] - Server is up and listening on port 9998
-[ 1380939013237 ] - Attempted login with username Fd and password FSD
-[ 1380939014474 ] - Attempted login with username fDF and password fdsf
-[ 1380939017619 ] - Attempted login with username windows and password withglass
-[ 1380939017619 ] - Login Successful. User windows logged in
+[ 1380940476908 ] - Server is up and listening on port 9998
+[ 1380940518379 ] - Server is up and listening on port 9998
+[ 1380940532506 ] - Attempted login with username fasd and password fsd
+[ 1380940533034 ] - Attempted login with username ffds and password f
+[ 1380940533418 ] - Attempted login with username sfd and password sdf
+[ 1380940533419 ] - IP Address /127.0.0.1 is now blocked for 60 seconds
+[ 1380940554870 ] - Server is up and listening on port 9998
+[ 1380940755728 ] - Server is up and listening on port 9998
+[ 1380940769367 ] - Attempted login with username Ckfsd and password fsd
+[ 1380940773339 ] - Attempted login with username Columbia and password 116bway
+[ 1380940773339 ] - Login Successful. User Columbia logged in
+[ 1380940779719 ] - Logout Successful. User Columbia logged out
