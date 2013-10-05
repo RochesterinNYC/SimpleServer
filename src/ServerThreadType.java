@@ -19,13 +19,6 @@ public enum ServerThreadType {
 	 * - Only one thread of this type operating at any one time.
 	 */
 	BASE, 
-
-	/**
-	 * Broadcast Thread
-	 * - The server thread that interacts with the client's thread that is listening
-	 * for broadcasts.
-	 */
-	BROADCAST, 
 	
 	/**
 	 * Client Thread
