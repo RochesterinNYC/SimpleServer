@@ -1,0 +1,480 @@
+diff --git a/src/BlockedIP.java b/src/BlockedIP.java
+index d73172c..8df0df3 100644
+--- a/src/BlockedIP.java
++++ b/src/BlockedIP.java
+@@ -1,21 +1,51 @@
+ import java.net.InetAddress;
+ 
+-
++/**
++ * <b>BlockedIP Class</b>
++ * <p>
++ * Represents an IP that has been blocked by a server.
++ * timeBlocked is the time that the IP was blocked.
++ * @author James Wen - jrw2175
++ */
+ public class BlockedIP {
++	
+ 	private InetAddress ip;
+ 	private long timeBlocked;
++	
++	/**
++	 * <b>BlockedIP Constructor</b>
++	 * <p>
++	 * Creates a BlockedIP and records the time at which the blocking occurred.
++	 * @param ip - the IP Address that is to be blocked
++	 */
+ 	public BlockedIP(InetAddress ip){
+ 		this.ip = ip;
+ 		this.timeBlocked = System.currentTimeMillis();
+ 	}
++	
++	/**
++	 * <b>toUnblock</b>
++	 * <p>
++	 * Gets whether this IP should now be unblocked (according to BLOCKTIME of
++	 * server). If the (current time of this method query) - (the time at which the
++	 * IP was blocked) is greater than the server's BLOCKTIME, then the IP should
++	 * be unblocked.
++	 * @return toUnblock - whether this IP is to be unblocked
++	 */
+ 	public boolean toUnblock(){
+ 		boolean toUnblock = false;
+-		if (System.currentTimeMillis() - timeBlocked > 60000){
++		if (System.currentTimeMillis() - timeBlocked > Server.BLOCKTIME){
+ 			toUnblock = true;
+ 		}
+ 		return toUnblock;
+ 	}
+ 	
++	/**
++	 * <b>getIP</b>
++	 * <p>
++	 * Gets the IP Address of this Blocked IP.
++	 * @return ip - the IP Address of this BlockedIP
++	 */
+ 	public InetAddress getIP(){
+ 		return ip;
+ 	}
+diff --git a/src/ClientStart.java b/src/ClientStart.java
+index f616202..2ff1063 100644
+--- a/src/ClientStart.java
++++ b/src/ClientStart.java
+@@ -1,5 +1,14 @@
+ import java.io.IOException;
+ 
++/**
++ * <b>ClientStart Class</b>
++ * <p>
++ * Starts a client that will be connect to the server that's listening on the 
++ * specified port at the specified IP Address.
++ * - Argument 1 = IP Address that server is at
++ * - Argument 2 = Port at IP that this client wishes to connect to
++ * @author James Wen - jrw2175
++ */
+ public class ClientStart {
+ 	public static void main(String[] args) throws IOException{
+ 		ClientThread clientStart = new ClientThread(new Client(args[0], Integer.parseInt(args[1])));
+diff --git a/src/ClientThread.java b/src/ClientThread.java
+index d01c676..e84a15f 100644
+--- a/src/ClientThread.java
++++ b/src/ClientThread.java
+@@ -1,6 +1,5 @@
+ import java.io.IOException;
+ import java.io.InputStreamReader;
+-import java.io.PrintWriter;
+ import java.net.Socket;
+ import java.util.Scanner;
+ 
+diff --git a/src/Server.java b/src/Server.java
+index 1dc69d0..4a7d933 100644
+--- a/src/Server.java
++++ b/src/Server.java
+@@ -3,29 +3,34 @@ import java.io.FileReader;
+ import java.io.IOException;
+ import java.net.InetAddress;
+ import java.net.ServerSocket;
++import java.net.Socket;
+ import java.util.ArrayList;
+-import java.util.HashMap;
+-import java.util.Iterator;
+-import java.util.Map;
+ import java.util.Scanner;
+-import java.util.concurrent.ConcurrentHashMap;
+ import java.util.concurrent.Executors;
+ import java.util.concurrent.ScheduledExecutorService;
+ import java.util.concurrent.ScheduledFuture;
+ import static java.util.concurrent.TimeUnit.*;
++
+ public class Server {
+-	
++	//Number of milliseconds to block IPs after repeated failed attempts for
++	protected final static long BLOCKTIME = 60000;
+ 	private ArrayList<Account> accounts;
+ 	private ServerSocket serverSocket;
+ 	private ArrayList<ServerThread> currentClients;
+ 	private boolean baseWaiting;
++	
+ 	private ArrayList<ServerThread> broadcastThreads;
+ 	private String broadcast;
+-	private ArrayList<BlockedIP> blockedIPs;
++	private boolean broadcastReady;
++	private boolean broadcastLogout;
++	private ArrayList<ClientPortPair> clientPortPairs;
++	private int portToLogout;
+ 	
++	private ArrayList<BlockedIP> blockedIPs;
+ 	private ScheduledExecutorService scheduler;
+-	private ScheduledFuture<?> unblockerHandle;	       
+-	
++	private ScheduledFuture<?> unblockerHandle;
++	private static int numBroadcasts;
++
+ 	
+ 	public Server(int serverPort) throws IOException{
+ 		setupLogin();
+@@ -42,9 +47,13 @@ public class Server {
+ 	    }
+ 		currentClients = new ArrayList<ServerThread>();
+ 		blockedIPs = new ArrayList<BlockedIP>();
++		clientPortPairs = new ArrayList<ClientPortPair>();
+ 		baseWaiting = true;
+ 	    System.out.println("Server is up and listening on port " + serverPort);
+ 	    setUpUnblocker();
++	    broadcastReady = false;
++	    broadcastLogout = false;
++	    toLogout = 0;
+ 	}
+ 	public void setUpUnblocker(){
+ 	    scheduler = Executors.newScheduledThreadPool(1);
+@@ -55,27 +64,83 @@ public class Server {
+ 		return blockedIPs;
+ 	}
+ 	
+-	public void setBroadcast(String broadcast){
+-		this.broadcast = broadcast;
++	
++	//Broadcasting Methods
++	///////
++	
++	public void setBroadcastLogout(boolean broadcastLogout){
++		this.broadcastLogout = broadcastLogout;
++	}
++	public boolean getBroadcastLogout(){
++		return this.broadcastLogout;
+ 	}
+ 	public String getBroadcast(){
+ 		return this.broadcast;
+ 	}
+-	public void broadcast(){
+-		synchronized(this){
+-    		this.notifyAll();
+-    	}
++	public void setPortLogout(int logout){
++		this.portToLogout = logout;
+ 	}
+-	
+-	public void waitThread(ServerThread thread){
+-		synchronized(thread){
+-			try {
+-				thread.wait();
+-			} catch (InterruptedException e) {
+-				e.printStackTrace();
++	public void broadcast(String broadcast){
++		this.broadcast = broadcast;
++		broadcastReady = true;
++		if(portToLogout != 0){
++			broadcastLogout = true;
++		}
++		else{
++			broadcastLogout = false;
++		}
++	}
++	public boolean getBroadcastReady(){
++		return broadcastReady;
++	}
++	public void setBroadcastReady(boolean broadcastReady){
++		broadcastReady = true;
++	}
++	public void logBroadcast(){
++		numBroadcasts++;
++	}
++	public boolean checkBroadcastComplete(){
++		boolean broadcastComplete = false;
++		if(broadcastLogout && numBroadcasts == 1){
++			broadcastComplete = true;
++			broadcastLogout = false;
++		}
++		else if(numBroadcasts == broadcastThreads.size()){
++			broadcastComplete = true;
++		}
++		return broadcastComplete;
++	}
++    public void addPort(Socket socket){
++		for(ClientPortPair pair : clientPortPairs){
++			//Pair already has interface thread but no broadcast
++			if(pair.isInterfaceMatch(socket) && pair.waitingBroadcastThread()){
++				pair.addBroadcastPort(socket);
++			}
++			//Pair already has both
++			else if(pair.isInterfaceMatch(socket) && pair.isBroadcastMatch(socket)){
++				//throw error
++			}
++			//Socket is an interface is not part of pairs yet --> create
++			else{
++				clientPortPairs.add(0, new ClientPortPair(socket));
+ 			}
+ 		}
+ 	}
++    public void removePort(Socket socket){
++    	for(ClientPortPair pair : clientPortPairs){		
++			if(pair.isInterfaceMatch(socket)){
++				pair.setInterfacePort(0);
++			}
++			else if(pair.isBroadcastMatch(socket)){
++				pair.setBroadcastPort(0);
++			}
++			if(pair.toBeRemoved()){
++				clientPortPairs.remove(pair);
++			}
++    	}
++    }
++	
++///////
+ 	
+ 	public boolean isBlocked(InetAddress ip){
+ 		boolean isBlocked = false;
+@@ -89,6 +154,7 @@ public class Server {
+ 	
+ 	public void blockIP(InetAddress ip){
+ 		blockedIPs.add(new BlockedIP(ip));
++	
+ 		System.out.println("IP Address " + ip.toString() + " is now blocked for 60 seconds");
+ 	}
+ 	
+diff --git a/src/ServerStart.java b/src/ServerStart.java
+new file mode 100644
+index 0000000..d2275c0
+--- /dev/null
++++ b/src/ServerStart.java
+@@ -0,0 +1,16 @@
++import java.io.IOException;
++
++/**
++ * <b>ServerStart Class</b>
++ * <p>
++ * Starts the server that will be connected to the local port specified
++ * in the argument.
++ * - Argument 1 = local server port to start server and have it listen on
++ * @author James Wen - jrw2175
++ */
++public class ServerStart {
++	public static void main(String[] args) throws IOException{
++		ServerThread serverStart = new ServerThread(new Server(Integer.parseInt(args[0])));
++		serverStart.serverListen();
++	}
++}
+diff --git a/src/ServerThread.java b/src/ServerThread.java
+index 3ec6370..15fa3ab 100644
+--- a/src/ServerThread.java
++++ b/src/ServerThread.java
+@@ -14,6 +14,9 @@ public class ServerThread extends Thread{
+ 	private String userName;
+ 	private ServerThreadType threadType;
+ 	
++	public Socket getSocket(){
++		return clientSocket;
++	}
+ 	public ServerThread(Server server){
+ 		this.server = server;
+ 		this.threadType = ServerThreadType.BASE;
+@@ -24,6 +27,7 @@ public class ServerThread extends Thread{
+ 		this.serverToClient = new PrintWriter(this.clientSocket.getOutputStream(), true);
+ 		this.clientToServer = new Scanner(new InputStreamReader(this.clientSocket.getInputStream()));
+ 		this.threadType = type;
++		server.addPort(clientSocket);
+ 	}
+ 
+ 	public void serverListen() throws IOException{
+@@ -41,18 +45,37 @@ public class ServerThread extends Thread{
+ 		}
+ 	}
+ 	
+-	
++    public void broadcast(){
++    	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
++    	server.broadcast(outputFromClient());
++    	inputToClient("Your message was broadcasted.");
++    	optionMenu();
++    }
+ 	public void run(){
+ 		//Check is client's IP is currently blocked
+ 		if(server.isBlocked(clientSocket.getInetAddress())){
+ 			inputToClient("ip blocked");
++			server.removePort(clientSocket);
+ 		}
+-		else{			
++		else{		
+ 			if (this.threadType == ServerThreadType.BROADCAST){
+ 				server.setBaseWaiting(true);
+ 				while(true){
+-					server.waitThread(this);
+-					inputToClient(server.getBroadcast());
++					//Broadcast ready and is Regular Message
++					if(server.getBroadcastReady() && !server.getBroadcastLogout()){
++						inputToClient(server.getBroadcast());
++						server.logBroadcast();
++						try {
++							sleep(500);
++						} catch (InterruptedException e) {
++							e.printStackTrace();
++						}
++					}
++					//Broadcast ready and is Logout Message
++					if(server.getBroadcastReady() && server.getBroadcastLogout()){
++						if(server.)
++					}
++					
+ 				}
+ 			}
+ 			else if (this.threadType == ServerThreadType.CLIENT){
+@@ -111,6 +134,8 @@ public class ServerThread extends Thread{
+     
+     public void logout(){
+     	server.logout(this);
++    	server.removePort(clientSocket);
++    	System.out.println("Logout Successful. User " + this.userName + " logged out");
+     	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
+     	inputToClient("Have a nice day!");
+     }
+@@ -143,13 +168,7 @@ public class ServerThread extends Thread{
+     	}
+     	optionMenu();
+     }
+-    public void broadcast(){
+-    	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
+-    	server.setBroadcast(outputFromClient());
+-    	server.broadcast();
+-    	inputToClient("Your message was broadcasted.");
+-    	optionMenu();
+-    }
++
+     
+     public String getUserName(){
+     	return userName;
+@@ -172,12 +191,13 @@ public class ServerThread extends Thread{
+     			server.addToClients(this);
+     			//Broadcaster Thread
+     			server.setBaseWaiting(false);
+-    			System.out.println("Login Successful. User " + this.userName + "logged in");
++    			System.out.println("Login Successful. User " + this.userName + " logged in");
+     			optionMenu();
+     		}
+     		else if (loginAttempts >= 3){
+     			inputToClient("blocked");
+     			server.blockIP(clientSocket.getInetAddress());
++    			server.removePort(clientSocket);
+     		}
+     		else {
+     			inputToClient("failure");
+diff --git a/src/ServerThreadType.java b/src/ServerThreadType.java
+index 3be0725..eaea98f 100644
+--- a/src/ServerThreadType.java
++++ b/src/ServerThreadType.java
+@@ -1,22 +1,34 @@
+-
++/**
++ * <b>ServerThreadType enum</b>
++ * <p>
++ * The possible server thread types that can be running.
++ * @author James Wen - jrw2175
++ */
+ public enum ServerThreadType {
+ 	/**
+-	 * Base Thread (for welcoming)
++	 * Base Thread
++	 * - The server thread that listens in and greets clients and creates new 
++	 * broadcast and client threads accordingly.
++	 * - Only one thread of this type operating at any one time.
+ 	 */
+ 	BASE, 
+ 
+ 	/**
+-	 * Thread for broadcasting to clients
++	 * Broadcast Thread
++	 * - The server thread that interacts with the client's thread that is listening
++	 * for broadcasts.
+ 	 */
+ 	BROADCAST, 
+ 	
+ 	/**
+-	 * Thread for operating with clients
++	 * Client Thread
++	 * - The server thread that interacts with the primary client thread and 
++	 * accepts client user input and sends server output.
+ 	 */
+ 	CLIENT, 
+ 	
+ 	/**
+-	 * Null
++	 * Placeholder null
+ 	 */
+ 	NONE
+ }
+diff --git a/src/Start.java b/src/Start.java
+deleted file mode 100644
+index 45dd209..0000000
+--- a/src/Start.java
++++ /dev/null
+@@ -1,9 +0,0 @@
+-import java.io.IOException;
+-
+-public class Start {
+-	public static void main(String[] args) throws IOException{
+-		ServerThread serverStart = new ServerThread(new Server(9998));
+-		serverStart.serverListen();
+-	}
+-
+-}
+diff --git a/src/Unblocker.java b/src/Unblocker.java
+index c82b3e4..ce06890 100644
+--- a/src/Unblocker.java
++++ b/src/Unblocker.java
+@@ -1,11 +1,36 @@
+-
++/**
++ * <b>Unblocker Class</b>
++ * <p>
++ * Represents the runnable unblock task that unblocks any IPs from the server
++ * that have been blocked for over a certain amount of time (time is set in 
++ * Server as BLOCKTIME).
++ * - Implements Runnable interface
++ * @author James Wen - jrw2175
++ */
+ class Unblocker implements Runnable {
++	
+ 	private Server server;
++	
++	/**
++	 * <b>Unblocker constructor</b>
++	 * <p>
++	 * Creates Unblocker runnable task that works with a server and its 
++	 * blockedIPs list.
++	 * @param server - the Server that IPs are to be unblocked on
++	 */
+ 	public Unblocker(Server server){
+ 		this.server = server;
+ 	}
++	
++	/**
++	 * <b>run</b>
++	 * <p>
++	 * Runs the task that removes all IPs that have been blocked for longer than
++	 * the server's set BLOCKTIME from the server's blockedIP list 
++	 */
+ 	public void run(){
+ 		for(BlockedIP ip : server.getBlockedIPs()){
++			//If this IP address has been blocked for longer than server's BLOCKTIME
+ 			if(ip.toUnblock()){
+ 				server.removeBlockedIP(ip);
+ 				System.out.println("IP Address " + ip.getIP().toString() + " is now unblocked");

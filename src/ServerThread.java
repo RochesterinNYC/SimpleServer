@@ -111,6 +111,7 @@ public class ServerThread extends Thread{
     
     public void logout(){
     	server.logout(this);
+    	System.out.println("Logout Successful. User " + this.userName + " logged out");
     	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
     	inputToClient("Have a nice day!");
     }
@@ -172,7 +173,7 @@ public class ServerThread extends Thread{
     			server.addToClients(this);
     			//Broadcaster Thread
     			server.setBaseWaiting(false);
-    			System.out.println("Login Successful. User " + this.userName + "logged in");
+    			System.out.println("Login Successful. User " + this.userName + " logged in");
     			optionMenu();
     		}
     		else if (loginAttempts >= 3){

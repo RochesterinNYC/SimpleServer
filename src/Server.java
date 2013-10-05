@@ -14,7 +14,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import static java.util.concurrent.TimeUnit.*;
 public class Server {
-	
+	//Number of milliseconds to block IPs after repeated failed attempts for
+	protected final static long BLOCKTIME = 60000;
 	private ArrayList<Account> accounts;
 	private ServerSocket serverSocket;
 	private ArrayList<ServerThread> currentClients;

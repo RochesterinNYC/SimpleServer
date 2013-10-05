@@ -1,0 +1,163 @@
+diff --git a/src/Server.java b/src/Server.java
+index 1dc69d0..99cbc25 100644
+--- a/src/Server.java
++++ b/src/Server.java
+@@ -22,10 +22,10 @@ public class Server {
+ 	private ArrayList<ServerThread> broadcastThreads;
+ 	private String broadcast;
+ 	private ArrayList<BlockedIP> blockedIPs;
++	private boolean broadcastReady;
+ 	
+ 	private ScheduledExecutorService scheduler;
+-	private ScheduledFuture<?> unblockerHandle;	       
+-	
++	private ScheduledFuture<?> unblockerHandle; 
+ 	
+ 	public Server(int serverPort) throws IOException{
+ 		setupLogin();
+@@ -43,39 +43,35 @@ public class Server {
+ 		currentClients = new ArrayList<ServerThread>();
+ 		blockedIPs = new ArrayList<BlockedIP>();
+ 		baseWaiting = true;
++		broadcastReady = false;
++		broadcast = "";
+ 	    System.out.println("Server is up and listening on port " + serverPort);
+ 	    setUpUnblocker();
+ 	}
+ 	public void setUpUnblocker(){
+-	    scheduler = Executors.newScheduledThreadPool(1);
++	    scheduler = Executors.newScheduledThreadPool(2);
+ 	    unblockerHandle = scheduler.scheduleAtFixedRate(new Unblocker(this), 1, 1, SECONDS);
+ 	}
+ 	
+ 	public ArrayList<BlockedIP> getBlockedIPs(){
+ 		return blockedIPs;
+ 	}
+-	
++	public ArrayList<ServerThread> getBroadcastThreads(){
++		return broadcastThreads;
++	}
++	public boolean broadcastReady(){
++		return broadcastReady;
++	}
+ 	public void setBroadcast(String broadcast){
+ 		this.broadcast = broadcast;
+ 	}
+ 	public String getBroadcast(){
+ 		return this.broadcast;
+ 	}
+-	public void broadcast(){
+-		synchronized(this){
+-    		this.notifyAll();
+-    	}
+-	}
+-	
+-	public void waitThread(ServerThread thread){
+-		synchronized(thread){
+-			try {
+-				thread.wait();
+-			} catch (InterruptedException e) {
+-				e.printStackTrace();
+-			}
+-		}
++	public void setBroadcastReady(boolean broadcastReady){
++		this.broadcastReady = broadcastReady;
+ 	}
++
+ 	
+ 	public boolean isBlocked(InetAddress ip){
+ 		boolean isBlocked = false;
+diff --git a/src/ServerThread.java b/src/ServerThread.java
+index 3ec6370..b4f13c1 100644
+--- a/src/ServerThread.java
++++ b/src/ServerThread.java
+@@ -13,7 +13,11 @@ public class ServerThread extends Thread{
+ 	private Socket clientSocket;
+ 	private String userName;
+ 	private ServerThreadType threadType;
++	private int portOfBroadcast;
+ 	
++	private void setBroadcastSocket(int portOfBroadcast){
++		this.portOfBroadcast = portOfBroadcast;
++	}
+ 	public ServerThread(Server server){
+ 		this.server = server;
+ 		this.threadType = ServerThreadType.BASE;
+@@ -41,18 +45,50 @@ public class ServerThread extends Thread{
+ 		}
+ 	}
+ 	
+-	
++	private boolean clientToLogout(String message){
++		//Not logout
++		if (message.indexOf("sudo end broadcast thread") == -1){
++			
++		}
++		//Is logout
++		else if (message.indexOf("sudo end broadcast thread") != -1){
++			if(server.toLogout() == clientSocket.getPort())
++		}
++	}
+ 	public void run(){
+ 		//Check is client's IP is currently blocked
+ 		if(server.isBlocked(clientSocket.getInetAddress())){
+ 			inputToClient("ip blocked");
+ 		}
+-		else{			
++		else{
+ 			if (this.threadType == ServerThreadType.BROADCAST){
+ 				server.setBaseWaiting(true);
+-				while(true){
+-					server.waitThread(this);
+-					inputToClient(server.getBroadcast());
++				boolean threadToClose = false;
++				String serverMessage = "";
++				while(!threadToClose){
++					try {
++						sleep(500);
++					} catch (InterruptedException e1) {
++						e1.printStackTrace();
++					}
++					if(server.broadcastReady()){
++						serverMessage = server.getBroadcast();
++						if(clientToLogout(serverMessage)){
++							threadToClose = true;
++							//Tells waiting client thread to close
++							inputToClient("sudo logout command");
++							try {
++								clientSocket.close();
++							}
++							catch (IOException e) {
++								e.printStackTrace();
++							}
++						}
++						else{
++							inputToClient(serverMessage);	
++						}
++						server.ackBroadcastSent();
++					}
+ 				}
+ 			}
+ 			else if (this.threadType == ServerThreadType.CLIENT){
+@@ -113,6 +149,11 @@ public class ServerThread extends Thread{
+     	server.logout(this);
+     	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
+     	inputToClient("Have a nice day!");
++    	try {
++			clientSocket.close();
++		} catch (IOException e) {
++			e.printStackTrace();
++		}
+     }
+     
+     public void whoelse(){
+@@ -146,7 +187,8 @@ public class ServerThread extends Thread{
+     public void broadcast(){
+     	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
+     	server.setBroadcast(outputFromClient());
+-    	server.broadcast();
++    	server.setBroadcastReady(true);
++    	
+     	inputToClient("Your message was broadcasted.");
+     	optionMenu();
+     }
