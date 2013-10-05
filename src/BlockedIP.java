@@ -10,14 +10,16 @@ import java.net.InetAddress;
 public class BlockedIP {
 	private InetAddress ip;
 	private long timeBlocked;
+	private long blocktime;
 	/**
 	* <b>BlockedIP Constructor</b>
 	* <p>
 	* Creates a BlockedIP and records the time at which the blocking occurred.
 	* @param ip - the IP Address that is to be blocked
 	*/
-	public BlockedIP(InetAddress ip){
+	public BlockedIP(InetAddress ip, long blocktime){
 		this.ip = ip;
+		this.blocktime = blocktime;
 		this.timeBlocked = System.currentTimeMillis();
 	}
 	/**
@@ -31,7 +33,7 @@ public class BlockedIP {
 	*/
 	public boolean toUnblock(){
 		boolean toUnblock = false;
-		if (System.currentTimeMillis() - timeBlocked > 60000){
+		if (System.currentTimeMillis() - timeBlocked > this.blocktime){
 			toUnblock = true;
 		}
 		return toUnblock;

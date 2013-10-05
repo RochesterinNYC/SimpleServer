@@ -1,21 +1,21 @@
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import static java.util.concurrent.TimeUnit.*;
 public class Server {
 	//Number of milliseconds to block IPs after repeated failed attempts for
-	protected final static long BLOCKTIME = 60000;
+	private long blocktime = 60000;
+	private int numLoginAttempts = 3;
 	private ArrayList<Account> accounts;
 	private ServerSocket serverSocket;
 	private ArrayList<ServerThread> currentClients;
@@ -27,7 +27,20 @@ public class Server {
 	private ScheduledExecutorService scheduler;
 	private ScheduledFuture<?> unblockerHandle;	       
 	
+	private PrintWriter logger;
 	
+	public long getBlocktime(){
+		return blocktime;
+	}
+	public int getNumLoginAttempts(){
+		return numLoginAttempts;
+	}
+	
+	public void printLog(String logMessage){
+		System.out.println("logging");
+		logger.println("[ " + System.currentTimeMillis() + " ] - " + logMessage);
+		logger.flush();
+	}
 	public Server(int serverPort) throws IOException{
 		setupLogin();
 		try {
@@ -44,7 +57,8 @@ public class Server {
 		currentClients = new ArrayList<ServerThread>();
 		blockedIPs = new ArrayList<BlockedIP>();
 		baseWaiting = true;
-	    System.out.println("Server is up and listening on port " + serverPort);
+		logger = new PrintWriter(new BufferedWriter(new FileWriter("server_log.txt", true)));
+	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
 	}
 	public void setUpUnblocker(){
@@ -89,8 +103,8 @@ public class Server {
 	}
 	
 	public void blockIP(InetAddress ip){
-		blockedIPs.add(new BlockedIP(ip));
-		System.out.println("IP Address " + ip.toString() + " is now blocked for 60 seconds");
+		blockedIPs.add(new BlockedIP(ip, blocktime));
+		printLog("IP Address " + ip.toString() + " is now blocked for " + viewBlocktime() + " seconds");
 	}
 	
 	public void removeBlockedIP(BlockedIP ip){
@@ -115,6 +129,18 @@ public class Server {
 			arrIndex++;
 		}
 		return currentUsers;
+	}
+	public ArrayList<Account> getAccounts(){
+		return accounts;
+	}
+	public ArrayList<ServerThread>getCurrentClients(){
+		return currentClients;
+	}
+	public int viewBlocktime(){
+		return (int) blocktime/1000;
+	}
+	public void changeBlockTime(int seconds){
+		this.blocktime = (long) seconds * 1000;
 	}
 	
 	public ArrayList<String> getUsersLastHr(){
@@ -170,7 +196,7 @@ public class Server {
 	}
 	
 	public boolean loginCorrect(String userName, String password){
-		System.out.println("Attempted login with username " + userName + " and password " + password);
+		printLog("Attempted login with username " + userName + " and password " + password);
 		boolean loginCorrect = false;
 		for(Account acc : accounts){
 			if(acc.login(userName, password)){
@@ -179,5 +205,9 @@ public class Server {
 			}
 		}
 		return loginCorrect;
+	}
+	
+	public void removeAllBlockedIPs(){
+		blockedIPs = new ArrayList<BlockedIP>();
 	}
 }

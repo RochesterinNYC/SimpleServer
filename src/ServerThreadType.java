@@ -6,6 +6,13 @@
  */
 public enum ServerThreadType {
 	/**
+	 * CommandLine Thread
+	 * - The command line thread that interacts with the server administrator
+	 * to perform basic tasks.
+	 */
+	COMMANDLINE, 
+	
+	/**
 	 * Base Thread
 	 * - The server thread that listens in and greets clients and creates new 
 	 * broadcast and client threads accordingly.

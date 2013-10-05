@@ -1,0 +1,5 @@
+[ 1380938621757 ] - Server is up and listening on port 9998
+[ 1380938639081 ] - Attempted login with username Fd and password Fd
+[ 1380938639921 ] - Attempted login with username f and password FD
+[ 1380938640554 ] - Attempted login with username fD and password fD
+[ 1380938640555 ] - IP Address /127.0.0.1 is now blocked for 60000 seconds

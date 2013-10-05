@@ -27,6 +27,8 @@ public class ServerThread extends Thread{
 	}
 
 	public void serverListen() throws IOException{
+		ConsoleThread console = new ConsoleThread(server);
+		console.start();
 		while(true){
 			//Login and client handler thread
 			Socket newSocket = server.getServerSocket().accept();
@@ -40,7 +42,9 @@ public class ServerThread extends Thread{
     		st.start();
 		}
 	}
-	
+	public Socket getSocket(){
+		return clientSocket;
+	}
 	
 	public void run(){
 		//Check is client's IP is currently blocked
@@ -111,7 +115,7 @@ public class ServerThread extends Thread{
     
     public void logout(){
     	server.logout(this);
-    	System.out.println("Logout Successful. User " + this.userName + " logged out");
+    	server.printLog("Logout Successful. User " + this.userName + " logged out");
     	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
     	inputToClient("Have a nice day!");
     }
@@ -158,7 +162,7 @@ public class ServerThread extends Thread{
     public void login() throws IOException{
 		boolean loginSuccess = false;
 		int loginAttempts = 0;
-    	while(!loginSuccess && loginAttempts < 3){
+    	while(!loginSuccess && loginAttempts < server.getNumLoginAttempts()){
     		inputToClient("Hi! Welcome to SimpleServer!");
     		inputToClient("Please enter your login info.");
     		inputToClient("Username: ");
@@ -173,7 +177,7 @@ public class ServerThread extends Thread{
     			server.addToClients(this);
     			//Broadcaster Thread
     			server.setBaseWaiting(false);
-    			System.out.println("Login Successful. User " + this.userName + " logged in");
+    			server.printLog("Login Successful. User " + this.userName + " logged in");
     			optionMenu();
     		}
     		else if (loginAttempts >= 3){
