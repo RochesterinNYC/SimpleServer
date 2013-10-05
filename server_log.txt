@@ -3,3 +3,8 @@
 [ 1380938639921 ] - Attempted login with username f and password FD
 [ 1380938640554 ] - Attempted login with username fD and password fD
 [ 1380938640555 ] - IP Address /127.0.0.1 is now blocked for 60000 seconds
+[ 1380938991946 ] - Server is up and listening on port 9998
+[ 1380939013237 ] - Attempted login with username Fd and password FSD
+[ 1380939014474 ] - Attempted login with username fDF and password fdsf
+[ 1380939017619 ] - Attempted login with username windows and password withglass
+[ 1380939017619 ] - Login Successful. User windows logged in

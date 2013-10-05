@@ -37,7 +37,6 @@ public class Server {
 	}
 	
 	public void printLog(String logMessage){
-		System.out.println("logging");
 		logger.println("[ " + System.currentTimeMillis() + " ] - " + logMessage);
 		logger.flush();
 	}
@@ -63,7 +62,7 @@ public class Server {
 	}
 	public void setUpUnblocker(){
 	    scheduler = Executors.newScheduledThreadPool(1);
-	    unblockerHandle = scheduler.scheduleAtFixedRate(new Unblocker(this), 1, 1, SECONDS);
+	    unblockerHandle = scheduler.scheduleAtFixedRate(new Unblocker(this, logger), 1, 1, SECONDS);
 	}
 	
 	public ArrayList<BlockedIP> getBlockedIPs(){

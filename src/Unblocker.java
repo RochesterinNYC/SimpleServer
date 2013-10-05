@@ -1,3 +1,5 @@
+import java.io.PrintWriter;
+
 /**
  * <b>Unblocker Class</b>
  * <p>
@@ -9,7 +11,7 @@
  */
 class Unblocker implements Runnable {
 	private Server server;
-	
+	private PrintWriter logger;
 	/**
 	 * <b>Unblocker constructor</b>
 	 * <p>
@@ -17,8 +19,9 @@ class Unblocker implements Runnable {
 	 * blockedIPs list.
 	 * @param server - the Server that IPs are to be unblocked on
 	 */
-	public Unblocker(Server server){
+	public Unblocker(Server server, PrintWriter logger){
 		this.server = server;
+		this.logger = logger;
 	}
 		
 	/**
@@ -32,7 +35,8 @@ class Unblocker implements Runnable {
 			//If this IP address has been blocked for longer than server's BLOCKTIME
 			if(ip.toUnblock()){
 				server.removeBlockedIP(ip);
-				System.out.println("IP Address " + ip.getIP().toString() + " is now unblocked");
+				logger.println("[ " + System.currentTimeMillis() + " ] - IP Address " + ip.getIP().toString() + " is now unblocked");
+				logger.flush();
 			}
 		}
 	}
