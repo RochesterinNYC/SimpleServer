@@ -2,11 +2,10 @@ import java.net.InetAddress;
 /**
 * <b>BlockedIP Class</b>
 * <p>
-* Represents an IP that has been blocked by a server.
+* Represents an IP that has been blocked by the server.
 * timeBlocked is the time that the IP was blocked.
 * @author James Wen - jrw2175
 */
-
 public class BlockedIP {
 	private InetAddress ip;
 	private long timeBlocked;
@@ -16,6 +15,7 @@ public class BlockedIP {
 	* <p>
 	* Creates a BlockedIP and records the time at which the blocking occurred.
 	* @param ip - the IP Address that is to be blocked
+	* @param blocktime - the amount of time that this IP is to be blocked for
 	*/
 	public BlockedIP(InetAddress ip, long blocktime){
 		this.ip = ip;
@@ -47,5 +47,4 @@ public class BlockedIP {
 	public InetAddress getIP(){
 		return ip;
 	}
-
 }

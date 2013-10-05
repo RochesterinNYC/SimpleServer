@@ -4,7 +4,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-
+/**
+* <b>Client Class</b>
+* <p>
+* Represents the client that interacts with the server.
+* @author James Wen - jrw2175
+*/
 public class Client {
     private Scanner localInput;
     private PrintWriter clientToServer;
@@ -12,15 +17,15 @@ public class Client {
     private Socket conn;
     private String host;
     private int portNumber;
-	public void inputToServer(String input){
-		clientToServer.println(input);
-	}
-    public String outputFromServer(){
-    	return serverToClient.nextLine();
-	}
-    public Socket getConn(){
-    	return conn;
-    }
+    
+    /**
+    * Client constructor
+    * <p>
+    * Creates a client and connects to the server.
+    * @param host - the IP address of the server
+    * @param portNumber - the port at the server's IP address to connect to 
+    * @throws IOException
+    */
     public Client(String host, int portNumber) throws IOException{
     	conn = new Socket(host, portNumber);
 		localInput = new Scanner(System.in);
@@ -29,6 +34,13 @@ public class Client {
 		this.host = host;
 		this.portNumber = portNumber;
     }
+
+    /**
+    * checkIPBlocked
+    * <p>
+    * Returns whether the IP Address that the client is on is blocked
+    * @return IPBlocked - whether this IP is blocked
+    */
     public boolean checkIPBlocked(){
     	String blockResponse = outputFromServer();
     	boolean IPBlocked = false;
@@ -40,16 +52,19 @@ public class Client {
     	}
     	return IPBlocked;
     }
-    public int getPortNumber(){
-    	return this.portNumber;
-    }
-    public String getHost(){
-    	return this.host;
-    }
 	
+    /**
+    * login
+    * <p>
+    * Attempts to login to the server and returns whether the client is
+    * successful and closes the client if its IP has become blocked from too
+    * many failed login attempts.
+    * @return loginSuccessful - whether the login was ultimately successful
+    */
 	public boolean login(){
 		boolean loginSuccessful = false;
 		boolean loginBlocked = false;
+		//While login has not been successful and IP is not blocked yet
 		while(!loginSuccessful && !loginBlocked){
 			System.out.println(outputFromServer());
 			System.out.println(outputFromServer());
@@ -76,6 +91,12 @@ public class Client {
 		return loginSuccessful;
 	}
 	
+    /**
+    * optionMenu
+    * <p>
+    * Manages the client interaction with the server options that the client 
+    * can undergo.
+    */
 	public void optionMenu(){
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
@@ -102,11 +123,13 @@ public class Client {
 		}
 	}
 	
-	public void logout(){
-		System.out.println(outputFromServer());
-		System.out.println(outputFromServer());
-	}
-	
+    /**
+    * whoelse
+    * <p>
+    * See what other clients are logged onto the server. 
+    * (Will return this client's username if there is another client on the
+    * server who is also using the account).
+    */
     public void whoelse(){
     	int numUsers = Integer.parseInt(outputFromServer());
     	for(int i = 0; i < numUsers; i++){
@@ -114,6 +137,11 @@ public class Client {
     	}
     	optionMenu();
     }
+    /**
+    * wholasthr
+    * <p>
+    * See what accounts have been logged into on the server in the last hour.
+    */
     public void wholasthr(){
     	int numUsers = Integer.parseInt(outputFromServer());
     	for(int i = 0; i < numUsers; i++){
@@ -121,5 +149,60 @@ public class Client {
     	}
     	optionMenu();
     }
-
+    /**
+    * logout
+    * <p>
+    * Logout of the server.
+    */
+	public void logout(){
+		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
+	}
+    
+    /**
+    * getConn
+    * <p>
+    * Get the socket representing the connection between this client and the
+    * server.
+    * @return conn - the connection
+    */
+    public Socket getConn(){
+    	return conn;
+    }
+    /**
+    * getPortNumber
+    * <p>
+    * Get the port number that this client is connected to.
+    * @return portNumber - the port number
+    */
+    public int getPortNumber(){
+    	return this.portNumber;
+    }
+    /**
+    * getHost
+    * <p>
+    * Get the server IP that this client is connected to.
+    * @return host - the server IP
+    */
+    public String getHost(){
+    	return this.host;
+    }
+    /**
+    * inputToServer
+    * <p>
+    * Input a query or response to the server.
+    * @param input - what is to be sent to the server
+    */
+	public void inputToServer(String input){
+		clientToServer.println(input);
+	}
+    /**
+    * outputFromServer
+    * <p>
+    * Read the server's response
+    * @return the server's response
+    */
+    public String outputFromServer(){
+    	return serverToClient.nextLine();
+	}
 }

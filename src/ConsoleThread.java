@@ -1,12 +1,28 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
-
+/**
+* <b>ConsoleThread Class</b>
+* <p>
+* Represents the console thread on the server that the server administrator
+* can interact with.
+* As of version 1.0, only single phrase (no spaces or arguments/flags yet) commands
+* are implemented.
+* Type 'help' to see all the commands and short descriptions.
+* @author James Wen - jrw2175
+*/
 public class ConsoleThread extends Thread{
 	private Server server;
 	private String currentCommand;
 	private Scanner consoleScanner;
 	private String[] commandList;
+	
+	/**
+	* <b>ConsoleThread constructor</b>
+	* <p>
+	* Constructs a console thread.
+	* @param server - the server that the console operates on
+	*/
 	public ConsoleThread(Server server){
 		this.server = server;
 		//List of currently implemented commands
@@ -16,14 +32,25 @@ public class ConsoleThread extends Thread{
 			"number_threads", "current_ips","last_hr", "version", "shut_logger"};
 	}
 	
+	/**
+	* <b>run</b>
+	* <p>
+	* Runs the console thread and greets the user and starts the prompt.
+	*/
 	public void run(){
 		consoleScanner = new Scanner(System.in);
 		consolePrint("Welcome to SimpleServer v1.0! Enter 'help' for a list of commands.");
 		consolePrint("Please also remember to shut the logger ('shut_logger') before you exit!");
-		
 		prompt();
 	}
 	
+	/**
+	* <b>prompt</b>
+	* <p>
+	* Presents a "> " prompt to the user and takes in commands.
+	* Unsuccessfully executed or non-implemented commands will output a brief
+	* error notice and reprompt.
+	*/
 	private void prompt(){
 		System.out.print("> ");
 		currentCommand = consoleScanner.nextLine();
@@ -36,15 +63,31 @@ public class ConsoleThread extends Thread{
 		prompt();
 	}
 	
+	/**
+	* <b>properCommand</b>
+	* <p>
+	* Returns whether the inputed command is implemented by the console.
+	* @param query - command
+	* @return commandCorrect - whether the command is implemented
+	*/
 	private boolean properCommand(String query){
-		boolean commandComplete = false;
+		boolean commandCorrect = false;
 		for(String command : commandList){
 			if(query.equals(command)){
-				commandComplete = true;
+				commandCorrect = true;
 			}
 		}
-		return commandComplete;		
+		return commandCorrect;		
 	}
+	
+	/**
+	* <b>completeCommand</b>
+	* <p>
+	* Carries out a command and returns whether the command is successfully 
+	* completed.
+	* @param command - the command to be completed
+	* @return commandComplete - whether the command was successfully carried out
+	*/
 	private boolean completeCommand(String command){
 		boolean commandComplete = true;
 		try{
@@ -93,6 +136,12 @@ public class ConsoleThread extends Thread{
 		}
 		return commandComplete;
 	}
+	
+	/**
+	* <b>help</b>
+	* <p>
+	* Shows the available commands and short descriptions.
+	*/
 	private void help(){
 		consolePrint("help");
 		consolePrint("- View all commands and what they do.");
@@ -115,41 +164,77 @@ public class ConsoleThread extends Thread{
 		consolePrint("current_ips");
 		consolePrint("- View all currently connected IPs.");
 		consolePrint("last_hr");
-		consolePrint("- View the usernames used by clients currently connected.");
+		consolePrint("- View the usernames used by clients who connected within the last hour.");
 		consolePrint("version");
 		consolePrint("- View the version of this server.");
 		consolePrint("shut_logger");
 		consolePrint("- Safely close the logging stream.");
 	}
+	
+	/**
+	* <b>viewBlockedIPs</b>
+	* <p>
+	* View all currently blocked IPs.
+	*/
 	private void viewBlockedIPs(){
 		ArrayList<BlockedIP> blockedIPs = server.getBlockedIPs();
 		for(BlockedIP ip : blockedIPs){
 			consolePrint(ip.getIP().toString());
 		}
 	}
+	/**
+	* <b>unblockAllIPs</b>
+	* <p>
+	* Unblock all currently blocked IPs.
+	*/
 	private void unblockAllIPs(){
 		server.removeAllBlockedIPs();
 		consolePrint("All IPs are now unblocked.");
 	}
+	/**
+	* <b>viewAccounts</b>
+	* <p>
+	* View all usernames that clients can login to this server with.
+	*/
 	private void viewAccounts(){
 		ArrayList<Account> accounts = server.getAccounts();
 		for(Account account : accounts){
 			consolePrint(account.getUserName());
 		}
-	}		
+	}	
+	/**
+	* <b>viewNumberLoginAttempts</b>
+	* <p>
+	* View how many failed login attempts are allowed before blocking IP for a set time.
+	*/
 	private void viewNumberLoginAttempts(){
 		consolePrint(Integer.toString(server.getNumLoginAttempts()) + " attempts allowed");
 	}
+	/**
+	* <b>changeNumberLoginAttempts</b>
+	* <p>
+	* Change how many failed login attempts are allowed before blocking IP for a set time.
+	*/
 	private void changeNumberLoginAttempts(){
 		consolePrint("What is the new number of allowed login attempts?");
 		int newNumber = Integer.parseInt(consoleScanner.nextLine());
 		System.out.print("    > ");
-		server.changeBlockTime(newNumber);
+		server.changeNumLoginAttempts(newNumber);
 		consolePrint("The number of login attempts allowed is now " + newNumber);
 	}
+	/**
+	* <b>viewBlockTime</b>
+	* <p>
+	* View how long IPs are blocked for after too many login attempts.
+	*/
 	private void viewBlockTime(){
 		consolePrint(Integer.toString(server.viewBlocktime()) + " seconds");
 	}
+	/**
+	* <b>changeBlockTime</b>
+	* <p>
+	* Change how long IPs are blocked for after too many login attempts.
+	*/
 	private void changeBlockTime(){
 		consolePrint("What is the new block time in seconds?");
 		int newBlockTime = Integer.parseInt(consoleScanner.nextLine());
@@ -157,29 +242,60 @@ public class ConsoleThread extends Thread{
 		server.changeBlockTime(newBlockTime);
 		consolePrint("The block time is now " + newBlockTime + " seconds");
 	}
+	/**
+	* <b>numberThreads</b>
+	* <p>
+	* View the current number of threads running on this server.
+	*/
 	private void numberThreads(){
 		consolePrint(Thread.activeCount() + " threads currently running");
-	}	
+	}
+	/**
+	* <b>viewCurrentIPs</b>
+	* <p>
+	* View all currently connected IPs.
+	*/
 	private void viewCurrentIPs(){
 		ArrayList<ServerThread> conns = server.getCurrentClients();
 		for(ServerThread client : conns){
 			consolePrint(client.getSocket().getInetAddress().toString());
 		}
 	}	
+	/**
+	* <b>viewLastHr</b>
+	* <p>
+	* View the usernames used by clients who connected within the last hour.
+	*/
 	private void viewLastHr(){
 		ArrayList<String> usersLastHr = server.getUsersLastHr();
 		for(String user : usersLastHr){
 			consolePrint(user);
 		}
 	}
+	/**
+	* <b>version</b>
+	* <p>
+	* View the version of this server.
+	*/
 	private void version(){
 		consolePrint("Simple Server version is 1.0");
 	}
+	/**
+	* <b>shutLogger</b>
+	* <p>
+	* Safely close the logging stream.
+	*/
 	private void shutLogger(){
 		consolePrint("Logger was safely closed");
 		server.closeLogger();
 		consolePrint("You may now close the server");
 	}
+	/**
+	* <b>consolePrint</b>
+	* <p>
+	* Print to the console.
+	* @param print - String to print
+	*/
 	private void consolePrint(String print){
 		System.out.println("    " + print);
 	}

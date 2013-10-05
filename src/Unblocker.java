@@ -18,6 +18,7 @@ class Unblocker implements Runnable {
 	 * Creates Unblocker runnable task that works with a server and its 
 	 * blockedIPs list.
 	 * @param server - the Server that IPs are to be unblocked on
+	 * @param logger - the server logger
 	 */
 	public Unblocker(Server server, PrintWriter logger){
 		this.server = server;
@@ -32,9 +33,10 @@ class Unblocker implements Runnable {
 	 */
 	public void run(){
 		for(BlockedIP ip : server.getBlockedIPs()){
-			//If this IP address has been blocked for longer than server's BLOCKTIME
+			//If this IP address has been blocked for longer than server's blocktime
 			if(ip.toUnblock()){
 				server.removeBlockedIP(ip);
+				//log the unblocking of this IP in server log
 				logger.println("[ " + System.currentTimeMillis() + " ] - IP Address " + ip.getIP().toString() + " is now unblocked");
 				logger.flush();
 			}

@@ -9,6 +9,12 @@ import java.io.IOException;
  * @author James Wen - jrw2175
  */
 public class ServerStart {
+	/**
+	* Main method
+	* <p>
+	* Starts the base server thread that will initiate the server operations
+	* and start listening on the specified port for client connection attempts
+	*/
 	public static void main(String[] args) throws IOException{
 		ServerThread serverStart = new ServerThread(new Server(Integer.parseInt(args[0])));
 		serverStart.serverListen();

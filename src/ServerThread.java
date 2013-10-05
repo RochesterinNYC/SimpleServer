@@ -4,8 +4,13 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
-
-
+/**
+* <b>ServerThread Class</b>
+* <p>
+* Represents the server thread that runs on the server.
+* Has different thread types as enumerated by ServerThreadType.
+* @author James Wen - jrw2175
+*/
 public class ServerThread extends Thread{
 	private Server server;
 	private PrintWriter serverToClient;
@@ -14,10 +19,26 @@ public class ServerThread extends Thread{
 	private String userName;
 	private ServerThreadType threadType;
 	
+    /**
+    * ServerThread constructor
+    * <p>
+    * Creates a server thread.
+    * Used for creating base server thread (that listens for connections).
+    * @param server - the main server
+    */
 	public ServerThread(Server server){
 		this.server = server;
 		this.threadType = ServerThreadType.BASE;
 	}
+    /**
+    * ServerThread constructor
+    * <p>
+    * Creates a server thread.
+    * @param server - the main server
+    * @param clientSocket - connection to a client
+    * @param type - the type of this ServerThread
+    * @throws IOException
+    */
 	public ServerThread(Server server, Socket clientSocket, ServerThreadType type) throws IOException{
 		this.server = server;
 		this.clientSocket = clientSocket;
@@ -25,22 +46,32 @@ public class ServerThread extends Thread{
 		this.clientToServer = new Scanner(new InputStreamReader(this.clientSocket.getInputStream()));
 		this.threadType = type;
 	}
-
+	
+    /**
+    * serverListen
+    * <p>
+    * Initiates the server operations (starts running the server).
+    * @throws IOException
+    */
 	public void serverListen() throws IOException{
+		//Starts the console thread
 		ConsoleThread console = new ConsoleThread(server);
 		console.start();
 		while(true){
-			//Login and client handler thread
+			//Creates login/client handler thread
 			Socket newSocket = server.getServerSocket().accept();
 			ServerThread st;
 			st = new ServerThread(server, newSocket, ServerThreadType.CLIENT);
     		st.start();
 		}
 	}
-	public Socket getSocket(){
-		return clientSocket;
-	}
-	
+
+    /**
+    * run
+    * <p>
+    * Starts the thread and checks if the client's IP is blocked, and if not,
+    * initiates login.
+    */
 	public void run(){
 		//Check is client's IP is currently blocked
 		if(server.isBlocked(clientSocket.getInetAddress())){
@@ -57,15 +88,14 @@ public class ServerThread extends Thread{
 				}
 			}
 		}
-	}
-	
-	public void inputToClient(String input){
-		serverToClient.println(input);
-	}
-    public String outputFromClient(){
-    	return clientToServer.nextLine();
-	}
-    
+	}	
+
+    /**
+    * optionMenu
+    * <p>
+    * Presents client with option menu and performs operations based
+    * on user response.
+    */
     public void optionMenu(){
     	String choice = "";
     	boolean correctCommand = false;
@@ -96,7 +126,12 @@ public class ServerThread extends Thread{
     		}
     	}
     }
-    
+
+    /**
+    * logout
+    * <p>
+    * Logs the client out.
+    */ 
     public void logout(){
     	server.logout(this);
     	server.printLog("Logout Successful. User " + this.userName + " logged out");
@@ -104,6 +139,11 @@ public class ServerThread extends Thread{
     	inputToClient("Have a nice day!");
     }
     
+    /**
+    * whoelse
+    * <p>
+    * Sends the client what other clients are logged onto the server.
+    */    
     public void whoelse(){
     	boolean userScreened = false;
     	String[] users = server.getCurrentUsers();
@@ -124,6 +164,11 @@ public class ServerThread extends Thread{
     	optionMenu();
     }
     
+    /**
+    * whoelse
+    * <p>
+    * Sends what accounts have been logged into on the server in the last hour.
+    */
     public void wholasthr(){
     	ArrayList<String> users = server.getUsersLastHr();
     	inputToClient(Integer.toString(users.size()));
@@ -133,9 +178,12 @@ public class ServerThread extends Thread{
     	optionMenu();
     }
     
-    public String getUserName(){
-    	return userName;
-    }
+    /**
+    * login
+    * <p>
+    * Handles the client login operations.
+    * @throws IOException
+    */
     public void login() throws IOException{
 		boolean loginSuccess = false;
 		int loginAttempts = 0;
@@ -164,4 +212,43 @@ public class ServerThread extends Thread{
     		}
 		}
 	}
+    
+    /**
+    * getSocket
+    * <p>
+    * Returns the socket representing this server thread's connection
+    * with the client.
+    * @return clientSocket - connection with client
+    */
+    public Socket getSocket(){
+		return clientSocket;
+	}
+    /**
+    * getUserName
+    * <p>
+    * Returns the username that the client logged in with.
+    * @return userName - username
+    */
+    public String getUserName(){
+    	return userName;
+    }
+    /**
+    * inputToClient
+    * <p>
+    * Input a query or response to the client.
+    * @param input - what is to be sent to the client
+    */
+	public void inputToClient(String input){
+		serverToClient.println(input);
+	}
+    /**
+    * outputFromClient
+    * <p>
+    * Read the client's response
+    * @return the client's response
+    */
+    public String outputFromClient(){
+    	return clientToServer.nextLine();
+	}
+    
 }

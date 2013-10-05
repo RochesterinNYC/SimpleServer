@@ -12,34 +12,32 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import static java.util.concurrent.TimeUnit.*;
+
+/**
+* <b>Client Class</b>
+* <p>
+* Represents the client that interacts with the server.
+* @author James Wen - jrw2175
+*/
 public class Server {
-	//Number of milliseconds to block IPs after repeated failed attempts for
+	private ServerSocket serverSocket;
+	private ArrayList<Account> accounts;
+	private ArrayList<ServerThread> currentClients;
+	private ArrayList<BlockedIP> blockedIPs;       
+	private PrintWriter logger;
+	private ScheduledExecutorService scheduler;
+	private ScheduledFuture<?> unblockerHandle;	
 	private long blocktime = 60000;
 	private int numLoginAttempts = 3;
-	private ArrayList<Account> accounts;
-	private ServerSocket serverSocket;
-	private ArrayList<ServerThread> currentClients;
-	private String broadcast;
-	private ArrayList<BlockedIP> blockedIPs;
-	private ScheduledExecutorService scheduler;
-	private ScheduledFuture<?> unblockerHandle;	       
 	
-	private PrintWriter logger;
-	
-	public long getBlocktime(){
-		return blocktime;
-	}
-	public int getNumLoginAttempts(){
-		return numLoginAttempts;
-	}
-	public void closeLogger(){
-		logger.close();
-	}
-	
-	public void printLog(String logMessage){
-		logger.println("[ " + System.currentTimeMillis() + " ] - " + logMessage);
-		logger.flush();
-	}
+    /**
+    * Server constructor
+    * <p>
+    * Creates the server, connects it to a port, and sets up the server logger,
+    * user accounts, and periodic task for unblocking IPs.
+    * @param serverPort - the port at the server's IP address to connect to 
+    * @throws IOException
+    */
 	public Server(int serverPort) throws IOException{
 		setupLogin();
 		try {
@@ -59,37 +57,49 @@ public class Server {
 	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
 	}
+	
+    /**
+    * setupLogin
+    * <p>
+    * Sets up the server accounts by reading in data from the accounts.txt
+    * file.
+    * @throws FileNotFoundException
+    */
+	private void setupLogin() throws FileNotFoundException{
+		Scanner passwordParse = new Scanner(new FileReader("accounts.txt"));
+		String userName = "";
+		String password = "";
+		Account newAcc;
+	    accounts = new ArrayList<Account>();
+		while (passwordParse.hasNext()) {
+			userName = passwordParse.next();
+			password = passwordParse.next();
+			newAcc = new Account(userName, password);
+			accounts.add(newAcc);
+		}
+	}
+	
+	//IP Blocking-related Methods
+    /**
+    * setUpUnblocker
+    * <p>
+    * Creates the scheduler that periodically (every 1 second) initiates the 
+    * unblocker task that unblocks any IPs that have been blocked for longer
+    * than the server blocktime (at the time that the IP was originally blocked,
+    * not current server blocktime).
+    */
 	public void setUpUnblocker(){
 	    scheduler = Executors.newScheduledThreadPool(1);
 	    unblockerHandle = scheduler.scheduleAtFixedRate(new Unblocker(this, logger), 1, 1, SECONDS);
 	}
-	
-	public ArrayList<BlockedIP> getBlockedIPs(){
-		return blockedIPs;
-	}
-	
-	public void setBroadcast(String broadcast){
-		this.broadcast = broadcast;
-	}
-	public String getBroadcast(){
-		return this.broadcast;
-	}
-	public void broadcast(){
-		synchronized(this){
-    		this.notifyAll();
-    	}
-	}
-	
-	public void waitThread(ServerThread thread){
-		synchronized(thread){
-			try {
-				thread.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
+
+    /**
+    * isBlocked
+    * <p>
+    * Returns whether the inputed ip is blocked by the server or not.
+    * @param ip - IP address to check
+    * @param isBlocked - whether that IP is blocked
+    */
 	public boolean isBlocked(InetAddress ip){
 		boolean isBlocked = false;
 		for(BlockedIP client : blockedIPs){
@@ -100,18 +110,46 @@ public class Server {
 		return isBlocked;
 	}
 	
+    /**
+    * blockIP
+    * <p>
+    * Blocks the inputed IP for an amount of time specified by the current
+    * server blocktime.
+    * @param ip - IP Address to block
+    */
 	public void blockIP(InetAddress ip){
 		blockedIPs.add(new BlockedIP(ip, blocktime));
 		printLog("IP Address " + ip.toString() + " is now blocked for " + viewBlocktime() + " seconds");
 	}
 	
+    /**
+    * removeBlockedIP
+    * <p>
+    * Unblocks the inputed IP
+    * @param ip - IP Address to unblock
+    */
 	public void removeBlockedIP(BlockedIP ip){
 		blockedIPs.remove(ip);
 	}
 	
+	//Client Operations-related methods
+    /**
+    * addToClients
+    * <p>
+    * Add ServerThread that is handling a newly connected client.
+    * Keeps track of the current clients essentially.
+    * @param newClient - ServerThread handling new client
+    */
 	public void addToClients(ServerThread newClient){
 		currentClients.add(newClient);
 	}
+	/**
+    * getCurrentUsers
+    * <p>
+    * Returns the usernames the accounts that current user clients are logged in
+    * with.
+    * @return currentUsers - usernames
+    */
 	public String[] getCurrentUsers(){
 		String[] currentUsers = new String[currentClients.size()];
 		int arrIndex = 0;
@@ -121,19 +159,13 @@ public class Server {
 		}
 		return currentUsers;
 	}
-	public ArrayList<Account> getAccounts(){
-		return accounts;
-	}
-	public ArrayList<ServerThread>getCurrentClients(){
-		return currentClients;
-	}
-	public int viewBlocktime(){
-		return (int) blocktime/1000;
-	}
-	public void changeBlockTime(int seconds){
-		this.blocktime = (long) seconds * 1000;
-	}
-	
+    /**
+    * getUsersLastHr
+    * <p>
+    * Returns the usernames of the accounts that clients have logged in with 
+    * in the last hour.
+    * @param currentUsers - usernames
+    */
 	public ArrayList<String> getUsersLastHr(){
 		ArrayList<String> currentUsers = new ArrayList<String>();
 		for (Account account : accounts){
@@ -148,25 +180,15 @@ public class Server {
 		}
 		return currentUsers;
 	}
-    
-    public ServerSocket getServerSocket(){
-    	return serverSocket;
-    }
-    
-	private void setupLogin() throws FileNotFoundException{
-		Scanner passwordParse = new Scanner(new FileReader("passwords.txt"));
-		String userName = "";
-		String password = "";
-		Account newAcc;
-	    accounts = new ArrayList<Account>();
-		while (passwordParse.hasNext()) {
-			userName = passwordParse.next();
-			password = passwordParse.next();
-			newAcc = new Account(userName, password);
-			accounts.add(newAcc);
-		}
-	}
 	
+    /**
+    * logout
+    * <p>
+    * Logs a client out of the server and marks the account they were logged into
+    * as active or inactive depending on whether there was another client
+    * logged in using that account.
+    * @param client - the client to be logged out
+    */
 	public void logout(ServerThread client){
 		currentClients.remove(client);
 		boolean userNameStillUsed = false;
@@ -186,6 +208,15 @@ public class Server {
 		}
 	}
 	
+    /**
+    * loginCorrect
+    * <p>
+    * Returns whether a login attempt with a specified username and password
+    * is correct.
+    * @param userName - login attempted username
+    * @param password - login attempted password
+    * @return loginCorrect - whether login attempt is correct
+    */
 	public boolean loginCorrect(String userName, String password){
 		printLog("Attempted login with username " + userName + " and password " + password);
 		boolean loginCorrect = false;
@@ -197,8 +228,125 @@ public class Server {
 		}
 		return loginCorrect;
 	}
-	
+
+    /**
+    * getServerSocket
+    * <p>
+    * Returns the primary socket that the server is connected to on its own IP.
+    * @return serverSocket - the server socket
+    */
+    public ServerSocket getServerSocket(){
+    	return serverSocket;
+    }
+    
+    //Mostly console related operations
+    /**
+    * getBlocktime
+    * <p>
+    * Returns how long newly blocked blockedIPs are to be blocked for
+    * @return blocktime - server's current blocktime
+    */	
+	public long getBlocktime(){
+		return blocktime;
+	}
+    /**
+    * changeBlocktime
+    * <p>
+    * Change how long newly blocked blockedIPs are to be blocked for
+    * @param blocktime - server's new blocktime
+    */	
+	public void changeBlockTime(int seconds){
+		this.blocktime = (long) seconds * 1000;
+	}
+    /**
+    * getNumLoginAttempts
+    * <p>
+    * Returns how many failed login attempts are allowed before an IP is blocked
+    * @return numLoginAttempts - server's allowed # login attempts
+    */	
+	public int getNumLoginAttempts(){
+		return numLoginAttempts;
+	}
+    /**
+    * changeNumLoginAttempts
+    * <p>
+    * Change how many failed login attempts are allowed before an IP is blocked
+    * @param numLoginAttempts - new number of allowed failed login attempts
+    */	
+	public void changeNumLoginAttempts(int numLoginAttempts){
+		this.numLoginAttempts = numLoginAttempts;
+	}	
+
+    /**
+    * removeAllBlockedIPs
+    * <p>
+    * Unblocks all currently blocked IPs
+    */	
 	public void removeAllBlockedIPs(){
 		blockedIPs = new ArrayList<BlockedIP>();
+	}
+	
+    /**
+    * getAccounts
+    * <p>
+    * Returns a list all the server accounts
+    * @return accounts - the server accounts
+    */	
+	public ArrayList<Account> getAccounts(){
+		return accounts;
+	}	
+    /**
+    * getCurrentClients
+    * <p>
+    * Returns a list all the currently connected clients
+    * @return currentClients - currently connected clients
+    */	
+	public ArrayList<ServerThread>getCurrentClients(){
+		return currentClients;
+	}
+    /**
+    * viewBlocktime
+    * <p>
+    * Returns the current server block time as a integer (how many seconds)
+    * @return blocktime in seconds
+    */	
+	public int viewBlocktime(){
+		return (int) blocktime/1000;
+	}
+    /**
+    * getBlockedIPs
+    * <p>
+    * Returns the currently blocked IP Addresses
+    * @return currently blocked IP Addresses
+    */	
+	public ArrayList<BlockedIP> getBlockedIPs(){
+		return blockedIPs;
+	}
+    /**
+    * changeNumLoginAttempts
+    * <p>
+    * Change how many failed login attempts are allowed before an IP is blocked
+    * @param numLoginAttempts - new number of allowed failed login attempts
+    */
+	
+	//Logger Operations
+    /**
+    * printLog
+    * <p>
+    * Prints to the server log.
+    * @param logMessage - message to be logged
+    */	
+	public void printLog(String logMessage){
+		logger.println("[ " + System.currentTimeMillis() + " ] - " + logMessage);
+		logger.flush();
+	}
+    /**
+    * closeLogger
+    * <p>
+    * Closes the server logger. (Necessary for server logger to keep printing
+    * to same server log file in different server sessions).
+    */	
+	public void closeLogger(){
+		logger.close();
 	}
 }
