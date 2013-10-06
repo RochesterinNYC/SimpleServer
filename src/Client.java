@@ -123,13 +123,14 @@ public class Client {
 			}
 			else if (command.equals("logout")){
 				logout();
+				return;
 			}
 			
 		}
 		else if (serverResponse.equals("failure")){
 			System.out.println(outputFromServer());
-			optionMenu();
 		}
+		optionMenu();
 	}
 	
     /**
@@ -144,7 +145,6 @@ public class Client {
     	for(int i = 0; i < numUsers; i++){
     		System.out.println(outputFromServer());
     	}
-    	optionMenu();
     }
     /**
     * wholasthr
@@ -156,7 +156,6 @@ public class Client {
     	for(int i = 0; i < numUsers; i++){
     		System.out.println(outputFromServer());
     	}
-    	optionMenu();
     }
     public void messages(){
     	int numMessages = Integer.parseInt(outputFromServer());
@@ -172,7 +171,7 @@ public class Client {
     	String messageID = localInput.nextLine();
     	if (messageID.equals("menu")){
     		inputToServer(messageID);
-    		optionMenu();
+    		return;
     	}
     	while(!isValidIDInteger(messageID)){
     		System.out.println("Please enter in a valid ID.");
@@ -181,7 +180,7 @@ public class Client {
     	while(!validID){
     		inputToServer(messageID);
     		if (messageID.equals("menu")){
-        		optionMenu();
+        		return;
         	}
     		serverResponse = outputFromServer();
     		if(serverResponse.equals("success")){
@@ -191,6 +190,7 @@ public class Client {
     			System.out.println(outputFromServer());
             	System.out.println(outputFromServer());
             	System.out.println(outputFromServer());
+            	messageID = localInput.nextLine();
     		}
     	}
     	//Print message
@@ -199,7 +199,6 @@ public class Client {
         	System.out.println(outputFromServer());
         	System.out.println(outputFromServer());
     	}
-    	optionMenu();
     }
     
     //Small integer checking method for checking message IDs
@@ -233,7 +232,6 @@ public class Client {
     	System.out.println(outputFromServer());
     	inputToServer(localInput.nextLine());
     	System.out.println(outputFromServer());
-    	optionMenu();
     }
     
     /**

@@ -128,6 +128,7 @@ public class ServerThread extends Thread{
     			}
     			else if(choice.trim().equals("logout")){
     				logout();
+    				return;
     			}
     		}
     		else{
@@ -135,6 +136,7 @@ public class ServerThread extends Thread{
     			inputToClient("Please enter in a correct command.");
     		}
     	}
+    	optionMenu();
     }
 
     //User Options
@@ -150,7 +152,7 @@ public class ServerThread extends Thread{
     	inputToClient("Or enter 'menu' to return to the menu.");
     	String clientResponse = outputFromClient();
     	if(clientResponse.equals("menu")){
-    		optionMenu();
+    		return;
     	}
     	int messageID = Integer.parseInt(clientResponse);
     	while(!server.isValidMessageOfAccount(messageID, userName)){//while message ID is invalid
@@ -160,7 +162,7 @@ public class ServerThread extends Thread{
         	inputToClient("Or enter 'menu' to return to the menu.");
         	clientResponse = outputFromClient();
         	if(clientResponse.equals("menu")){
-        		optionMenu();
+        		return;
         	}
         	messageID = Integer.parseInt(clientResponse);
     	}
@@ -169,7 +171,6 @@ public class ServerThread extends Thread{
 		inputToClient("Msg ID: " + queryMessage.getID());
 		inputToClient("   Subject: " + queryMessage.getSubject());
 		inputToClient("   Body: " + queryMessage.getBody());
-		optionMenu();
     }
     
     public void send(){
@@ -188,7 +189,6 @@ public class ServerThread extends Thread{
         server.processNewMessage(new Message(server.getAccount(this.userName), 
 				 				 server.getAccount(recipient), subject, body));
         inputToClient("Your message has been sent!");
-        optionMenu();
     }
     
     /**
@@ -213,7 +213,6 @@ public class ServerThread extends Thread{
     			inputToClient(user);
     		}	
     	}
-    	optionMenu();
     }  
     /**
     * wholasthr
@@ -226,7 +225,6 @@ public class ServerThread extends Thread{
     	for (String user : users){
     		inputToClient(user);   
     	}
-    	optionMenu();
     }
     /**
     * logout

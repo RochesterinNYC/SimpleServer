@@ -47,3 +47,19 @@
 [ 1381032226685 ] - Attempted login with username Columbia and password 116bway
 [ 1381032226685 ] - Login Successful. User Columbia logged in
 [ 1381032257614 ] - Logout Successful. User Columbia logged out
+[ 1381032827504 ] - Server is up and listening on port 9998
+[ 1381032835737 ] - Attempted login with username Columbia and password 116bway
+[ 1381032835737 ] - Login Successful. User Columbia logged in
+[ 1381032990131 ] - Server is up and listening on port 9998
+[ 1381032996391 ] - Attempted login with username Columbia and password 116bway
+[ 1381032996391 ] - Login Successful. User Columbia logged in
+[ 1381033022206 ] - Logout Successful. User Columbia logged out
+[ 1381033033607 ] - Logout Successful. User Columbia logged out
+[ 1381033063624 ] - Server is up and listening on port 9998
+[ 1381033070814 ] - Attempted login with username Columbia and password 116bway
+[ 1381033070814 ] - Login Successful. User Columbia logged in
+[ 1381033072710 ] - Logout Successful. User Columbia logged out
+[ 1381033105962 ] - Server is up and listening on port 9998
+[ 1381033113621 ] - Attempted login with username Columbia and password 116bway
+[ 1381033113621 ] - Login Successful. User Columbia logged in
+[ 1381033115105 ] - Logout Successful. User Columbia logged out
