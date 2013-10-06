@@ -103,10 +103,14 @@ public class ServerThread extends Thread{
     		inputToClient("These are your options:");
     		inputToClient("- Enter 'whoelse' to see what other users are connected on this server.");
     		inputToClient("- Enter 'wholasthr' to see what users have connected within the last hour.");
+    		inputToClient("- Enter 'messages' to view the messages users have sent to this account.");
+    		inputToClient("- Enter 'send' to send a message to an account.");
     		inputToClient("- Enter 'logout' to logout from this account.");
     		inputToClient("What would you like to do?");
     		choice = outputFromClient();
-    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") || choice.trim().equals("logout")){
+    		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") 
+    		   || choice.trim().equals("messages") || choice.trim().equals("send")
+    		   || choice.trim().equals("logout")){
     			correctCommand = true;
     			inputToClient("success");
     			//No String switching in < Java 1.7...
@@ -115,6 +119,12 @@ public class ServerThread extends Thread{
     			}
     			else if(choice.trim().equals("wholasthr")){
     				wholasthr();
+    			}
+    			else if(choice.trim().equals("messages")){
+    				messages();
+    			}
+    			else if(choice.trim().equals("send")){
+    				send();
     			}
     			else if(choice.trim().equals("logout")){
     				logout();
@@ -127,16 +137,58 @@ public class ServerThread extends Thread{
     	}
     }
 
-    /**
-    * logout
-    * <p>
-    * Logs the client out.
-    */ 
-    public void logout(){
-    	server.logout(this);
-    	server.printLog("Logout Successful. User " + this.userName + " logged out");
-    	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
-    	inputToClient("Have a nice day!");
+    //User Options
+    public void messages(){
+    	ArrayList<Message> accountMessages = server.getAccount(userName).getMessages();
+    	inputToClient(Integer.toString(accountMessages.size()));
+    	inputToClient("Here are the messages for " + this.userName + ":");
+    	for(Message message : accountMessages){
+    		inputToClient("Msg ID: " + message.getID());
+    		inputToClient("   Subject: " + message.getSubject());
+    	}
+    	inputToClient("Please enter in the ID of the message you wish to view.");
+    	inputToClient("Or enter 'menu' to return to the menu.");
+    	String clientResponse = outputFromClient();
+    	if(clientResponse.equals("menu")){
+    		optionMenu();
+    	}
+    	int messageID = Integer.parseInt(clientResponse);
+    	while(!server.isValidMessageOfAccount(messageID, userName)){//while message ID is invalid
+    		inputToClient("failure");
+    		inputToClient("There is no message with that ID saved to this account.");
+    		inputToClient("Please enter in the ID of the message you wish to view.");
+        	inputToClient("Or enter 'menu' to return to the menu.");
+        	clientResponse = outputFromClient();
+        	if(clientResponse.equals("menu")){
+        		optionMenu();
+        	}
+        	messageID = Integer.parseInt(clientResponse);
+    	}
+    	inputToClient("success");
+    	Message queryMessage = server.getMessage(messageID, userName);
+		inputToClient("Msg ID: " + queryMessage.getID());
+		inputToClient("   Subject: " + queryMessage.getSubject());
+		inputToClient("   Body: " + queryMessage.getBody());
+		optionMenu();
+    }
+    
+    public void send(){
+    	inputToClient("Please enter in the username of the account you wish to send a message to.");
+    	String recipient = outputFromClient();
+    	while(!server.isValidAccount(recipient)){
+    		inputToClient("failure");
+    		inputToClient("Please enter the username of an account on this server."); 
+    		recipient = outputFromClient();
+    	}
+    	inputToClient("success");
+    	inputToClient("Please enter the subject line.");
+    	String subject = outputFromClient();
+    	inputToClient("Please enter the message body (one line only as of Simple Server version 1.0).");
+        String body = outputFromClient(); 
+        server.processNewMessage(new Message(server.getAccount(this.userName), 
+				 				 server.getAccount(recipient), subject, body));
+        inputToClient("Your message has been sent!");
+        optionMenu();
     }
     
     /**
@@ -162,10 +214,9 @@ public class ServerThread extends Thread{
     		}	
     	}
     	optionMenu();
-    }
-    
+    }  
     /**
-    * whoelse
+    * wholasthr
     * <p>
     * Sends what accounts have been logged into on the server in the last hour.
     */
@@ -176,6 +227,17 @@ public class ServerThread extends Thread{
     		inputToClient(user);   
     	}
     	optionMenu();
+    }
+    /**
+    * logout
+    * <p>
+    * Logs the client out.
+    */ 
+    public void logout(){
+    	server.logout(this);
+    	server.printLog("Logout Successful. User " + this.userName + " logged out");
+    	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
+    	inputToClient("Have a nice day!");
     }
     
     /**

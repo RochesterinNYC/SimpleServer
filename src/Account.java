@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 /**
 * <b>Account Class</b>
 * <p>
@@ -11,6 +13,7 @@ public class Account {
 	private String password;
 	private boolean loggedIn;
 	private long lastLoginTime;
+	private ArrayList<Message> messages;
 	
 	/**
 	* <b>Account constructor</b>
@@ -24,8 +27,10 @@ public class Account {
 		this.userName = userName;
 		this.password = password;
 		this.loggedIn = false;
+		this.messages = new ArrayList<Message>();
 	}
 	
+	//Login related methods
 	/**
 	* <b>login</b>
 	* <p>
@@ -65,6 +70,16 @@ public class Account {
 	public boolean isLoggedIn(){
 		return loggedIn;
 	}
+	
+	//Message Functionality methods
+	public ArrayList<Message> getMessages(){
+		return messages;
+	}
+	
+	public void newMessage(Message message){
+		messages.add(message);
+	}
+
 	
 	/**
 	* <b>getUserName</b>

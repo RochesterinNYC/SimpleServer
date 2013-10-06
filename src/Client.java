@@ -103,6 +103,8 @@ public class Client {
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
 		String command = localInput.nextLine();
 		inputToServer(command);
 		String serverResponse = outputFromServer();
@@ -113,9 +115,16 @@ public class Client {
 			else if (command.equals("wholasthr")){
 				wholasthr();
 			}
+			else if (command.equals("messages")){
+				messages();
+			}
+			else if (command.equals("send")){
+				send();
+			}
 			else if (command.equals("logout")){
 				logout();
 			}
+			
 		}
 		else if (serverResponse.equals("failure")){
 			System.out.println(outputFromServer());
@@ -149,6 +158,84 @@ public class Client {
     	}
     	optionMenu();
     }
+    public void messages(){
+    	int numMessages = Integer.parseInt(outputFromServer());
+    	System.out.println(outputFromServer());
+    	for(int i = 0; i < numMessages; i++){
+    		System.out.println(outputFromServer());
+    		System.out.println(outputFromServer());
+    	}
+    	boolean validID = false;
+    	String serverResponse = "";
+    	System.out.println(outputFromServer());
+    	System.out.println(outputFromServer());
+    	String messageID = localInput.nextLine();
+    	if (messageID.equals("menu")){
+    		inputToServer(messageID);
+    		optionMenu();
+    	}
+    	while(!isValidIDInteger(messageID)){
+    		System.out.println("Please enter in a valid ID.");
+    		messageID = localInput.nextLine();
+    	}
+    	while(!validID){
+    		inputToServer(messageID);
+    		if (messageID.equals("menu")){
+        		optionMenu();
+        	}
+    		serverResponse = outputFromServer();
+    		if(serverResponse.equals("success")){
+    			validID = true;
+    		}
+    		else if(serverResponse.equals("failure")){
+    			System.out.println(outputFromServer());
+            	System.out.println(outputFromServer());
+            	System.out.println(outputFromServer());
+    		}
+    	}
+    	//Print message
+    	if(serverResponse.equals("success")){
+    		System.out.println(outputFromServer());
+        	System.out.println(outputFromServer());
+        	System.out.println(outputFromServer());
+    	}
+    	optionMenu();
+    }
+    
+    //Small integer checking method for checking message IDs
+    private static boolean isValidIDInteger(String s) {
+        boolean isInteger = true;
+    	try { 
+            int i = Integer.parseInt(s);
+            if(i <= 0){
+            	isInteger = false;
+            }
+        } catch(NumberFormatException e) { 
+            isInteger = false; 
+        }
+        return isInteger;
+    }
+
+    public void send(){
+    	boolean isValidAccount = false;
+    	String serverResponse;
+    	while(!isValidAccount){
+        	System.out.println(outputFromServer());
+    		String recipientUsername = localInput.nextLine();
+        	inputToServer(recipientUsername);
+        	serverResponse = outputFromServer();
+        	if(serverResponse.equals("success")){
+        		isValidAccount = true;
+        	}
+    	}
+    	System.out.println(outputFromServer());
+    	inputToServer(localInput.nextLine());
+    	System.out.println(outputFromServer());
+    	inputToServer(localInput.nextLine());
+    	System.out.println(outputFromServer());
+    	optionMenu();
+    }
+    
     /**
     * logout
     * <p>

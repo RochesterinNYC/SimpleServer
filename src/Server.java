@@ -23,7 +23,8 @@ public class Server {
 	private ServerSocket serverSocket;
 	private ArrayList<Account> accounts;
 	private ArrayList<ServerThread> currentClients;
-	private ArrayList<BlockedIP> blockedIPs;       
+	private ArrayList<BlockedIP> blockedIPs;   
+	private ArrayList<Message> masterMessageStorage;
 	private PrintWriter logger;
 	private ScheduledExecutorService scheduler;
 	private ScheduledFuture<?> unblockerHandle;	
@@ -53,6 +54,7 @@ public class Server {
 	    }
 		currentClients = new ArrayList<ServerThread>();
 		blockedIPs = new ArrayList<BlockedIP>();
+		masterMessageStorage = new ArrayList<Message>();
 		logger = new PrintWriter(new BufferedWriter(new FileWriter("server_log.txt", true)));
 	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
@@ -133,6 +135,52 @@ public class Server {
 	}
 	
 	//Client Operations-related methods
+	
+	
+	public boolean isValidAccount(String accountName){
+		boolean isValid = false;
+		for(Account account : accounts){
+			if(account.getUserName().equals(accountName)){
+				isValid = true;
+			}
+		}
+		return isValid;
+	}
+	//userName required to prevent client from accessing messages on other accounts
+	public boolean isValidMessageOfAccount(int id, String userName){
+		boolean isValid = false;
+		Account account = getAccount(userName);
+		for(Message message : account.getMessages()){
+			if(message.getID() == (id)){
+				isValid = true;
+			}
+		}
+		return isValid;
+	}
+	public Account getAccount(String accountName){
+		Account queryAccount = null;
+		for(Account account : accounts){
+			if(account.getUserName().equals(accountName)){
+				queryAccount = account;
+			}
+		}
+		return queryAccount;
+	}
+	public Message getMessage(int id, String userName){
+		Message queryMessage = null;
+		Account account = getAccount(userName);
+		for(Message message : account.getMessages()){
+			if(message.getID() == (id)){
+				queryMessage = message;
+			}
+		}
+		return queryMessage;
+	}
+	public void processNewMessage(Message message){
+		masterMessageStorage.add(message);
+		Account account = message.getRecipient();
+		account.newMessage(message);
+	}
     /**
     * addToClients
     * <p>
