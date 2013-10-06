@@ -26,6 +26,9 @@ public class Message {
 	public Account getRecipient(){
 		return recipient;
 	}
+	public Account getSender(){
+		return sender;
+	}
 	
 	public String getSubject(){
 		return subject;
@@ -39,5 +42,8 @@ public class Message {
 		return timeSent;
 	}
 	
+	public String getLogMessage(){
+		return (sender.getUserName() + " sent a message to " + recipient.getUserName());
+	}
 	
 }

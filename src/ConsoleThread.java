@@ -29,7 +29,8 @@ public class ConsoleThread extends Thread{
 		this.commandList = new String[]{"help", "blocked_ips", 
 			"unblock_all", "accounts", "view_blocktime","change_blocktime",
 			"view_number_login_attempts", "change_number_login_attempts",
-			"number_threads", "current_ips","last_hr", "version", "shut_logger"};
+			"number_threads", "current_ips","last_hr", "view_all_messages", 
+			"version", "shut_logger"};
 	}
 	
 	/**
@@ -124,6 +125,9 @@ public class ConsoleThread extends Thread{
 			else if(command.equals("last_hr")){
 				viewLastHr();
 			}
+			else if(command.equals("view_all_messages")){
+				viewAllMessages();
+			}
 			else if(command.equals("version")){
 				version();
 			}
@@ -165,6 +169,8 @@ public class ConsoleThread extends Thread{
 		consolePrint("- View all currently connected IPs.");
 		consolePrint("last_hr");
 		consolePrint("- View the usernames used by clients who connected within the last hour.");
+		consolePrint("view_all_messages");
+		consolePrint("- View all the messages on this server that have been sent by users.");
 		consolePrint("version");
 		consolePrint("- View the version of this server.");
 		consolePrint("shut_logger");
@@ -270,6 +276,17 @@ public class ConsoleThread extends Thread{
 		ArrayList<String> usersLastHr = server.getUsersLastHr();
 		for(String user : usersLastHr){
 			consolePrint(user);
+		}
+	}
+	private void viewAllMessages(){
+		ArrayList<Message> allMessages = server.getAllMessages();
+		for(Message message : allMessages ){
+			consolePrint("Message ID: " + message.getID());
+			consolePrint("Sent at " + message.getTimeSent() + " from user " +
+					     message.getSender().getUserName() + " to user " + 
+					     message.getRecipient().getUserName());
+			consolePrint("    Subject: " + message.getSubject());
+			consolePrint("    Content: " + message.getBody());
 		}
 	}
 	/**

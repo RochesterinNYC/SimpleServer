@@ -63,7 +63,7 @@ public class Account {
 	/**
 	* <b>isLoggedIn</b>
 	* <p>
-	* Returns whether this account is active (whether a client is currenty 
+	* Returns whether this account is active (whether a client is currently 
 	* logged on the server using it).
 	* @return loggedIn - whether this account is active
 	*/

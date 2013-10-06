@@ -24,7 +24,7 @@ public class Server {
 	private ArrayList<Account> accounts;
 	private ArrayList<ServerThread> currentClients;
 	private ArrayList<BlockedIP> blockedIPs;   
-	private ArrayList<Message> masterMessageStorage;
+	private ArrayList<Message> masterMessageList;
 	private PrintWriter logger;
 	private ScheduledExecutorService scheduler;
 	private ScheduledFuture<?> unblockerHandle;	
@@ -54,7 +54,7 @@ public class Server {
 	    }
 		currentClients = new ArrayList<ServerThread>();
 		blockedIPs = new ArrayList<BlockedIP>();
-		masterMessageStorage = new ArrayList<Message>();
+		masterMessageList = new ArrayList<Message>();
 		logger = new PrintWriter(new BufferedWriter(new FileWriter("server_log.txt", true)));
 	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
@@ -157,6 +157,9 @@ public class Server {
 		}
 		return isValid;
 	}
+	public ArrayList<Message> getAllMessages(){
+		return masterMessageList;
+	}
 	public Account getAccount(String accountName){
 		Account queryAccount = null;
 		for(Account account : accounts){
@@ -177,9 +180,10 @@ public class Server {
 		return queryMessage;
 	}
 	public void processNewMessage(Message message){
-		masterMessageStorage.add(message);
+		masterMessageList.add(message);
 		Account account = message.getRecipient();
 		account.newMessage(message);
+		printLog(message.getLogMessage());
 	}
     /**
     * addToClients

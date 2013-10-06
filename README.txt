@@ -34,8 +34,9 @@ Extra Features:
   - whoelse, wholasthr, and the console operations reflect these logouts
 
 - SimpleServer Admin Console
-  - Instead of having the server simply output messages and statuses (these go into the server log instead), starting the server presents the admin with a simple console that allow for some commands relating to viewing the status of the servers, clients, blocked IPs and operations regarding these.
+  - Instead of having the server simply output messages and statuses (these go into the server log instead), starting the server presents the admin with a simple console that allow for some commands relating to viewing the status of the servers, clients, blocked IPs, messages, and operations regarding these.
 
 - Account Messaging System (messages and send)
   - Users logged in on an account can send messages from that account to another account (can be to themselves) and read the messages that the account they're logged in as has received.
   - Currently, one line subjects and bodies are implemented.
+  - Messages are logged in the server log and server admin has the ability to view all messages on the server.
