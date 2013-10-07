@@ -61,10 +61,19 @@ public class ServerThread extends Thread{
 			//Creates login/client handler thread
 			Socket newSocket = server.getServerSocket().accept();
 			ServerThread st;
-			st = new ServerThread(server, newSocket, ServerThreadType.CLIENT);
-    		st.start();
+			if(server.getBaseWaiting()){
+				st = new ServerThread(server, newSocket, ServerThreadType.CLIENT);
+			}
+			else{				
+				st = new ServerThread(server, newSocket, ServerThreadType.BROADCAST);
+    			server.logBroadcastThread();
+			}
+			
+			st.start();
 		}
 	}
+	
+	
 
     /**
     * run
@@ -73,18 +82,41 @@ public class ServerThread extends Thread{
     * initiates login.
     */
 	public void run(){
-		//Check is client's IP is currently blocked
+		//Check if client's IP is currently blocked
 		if(server.isBlocked(clientSocket.getInetAddress())){
 			inputToClient("ip blocked");
 		}
 		else{			
 			if (this.threadType == ServerThreadType.CLIENT){
 				inputToClient("ip not blocked");
+				inputToClient(Integer.toString(server.getNextClientID()));
 				try{
 					login();
 				}
 				catch(IOException e){
 	    		
+				}
+			}
+			if (this.threadType == ServerThreadType.BROADCAST){
+				server.setBaseWaiting(true);
+				String broadcastMessage = "";
+				String clientResponse = "";
+				while(true){
+					broadcastMessage = server.getBroadcast();
+					inputToClient(broadcastMessage);
+					clientResponse = outputFromClient();
+					if(clientResponse.equals("ack")){
+						server.logBroadcastReceived();
+						try {
+							sleep(500);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+					else if(clientResponse.equals("logout")){
+						//End thread
+						return;
+					}
 				}
 			}
 		}
@@ -103,14 +135,15 @@ public class ServerThread extends Thread{
     		inputToClient("These are your options:");
     		inputToClient("- Enter 'whoelse' to see what other users are connected on this server.");
     		inputToClient("- Enter 'wholasthr' to see what users have connected within the last hour.");
+    		inputToClient("- Enter 'broadcast' to broadcast a one-line message to other logged-in clients.");
     		inputToClient("- Enter 'messages' to view the messages users have sent to this account.");
     		inputToClient("- Enter 'send' to send a message to an account.");
     		inputToClient("- Enter 'logout' to logout from this account.");
     		inputToClient("What would you like to do?");
     		choice = outputFromClient();
     		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") 
-    		   || choice.trim().equals("messages") || choice.trim().equals("send")
-    		   || choice.trim().equals("logout")){
+    		   || choice.trim().equals("broadcast") || choice.trim().equals("messages") 
+    		   || choice.trim().equals("send") || choice.trim().equals("logout")){
     			correctCommand = true;
     			inputToClient("success");
     			//No String switching in < Java 1.7...
@@ -119,6 +152,9 @@ public class ServerThread extends Thread{
     			}
     			else if(choice.trim().equals("wholasthr")){
     				wholasthr();
+    			}
+    			else if(choice.trim().equals("broadcast")){
+    				broadcast();
     			}
     			else if(choice.trim().equals("messages")){
     				messages();
@@ -137,6 +173,12 @@ public class ServerThread extends Thread{
     		}
     	}
     	optionMenu();
+    }
+    
+    public void broadcast(){
+    	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
+    	server.broadcast(outputFromClient(), userName);
+    	inputToClient("Your message was broadcasted.");
     }
 
     //User Options
@@ -233,6 +275,7 @@ public class ServerThread extends Thread{
     */ 
     public void logout(){
     	server.logout(this);
+    	server.broadcastLogout();
     	server.printLog("Logout Successful. User " + this.userName + " logged out");
     	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
     	inputToClient("Have a nice day!");
@@ -260,6 +303,8 @@ public class ServerThread extends Thread{
     			inputToClient("success");
     			this.userName = userNameAttempt;
     			server.addToClients(this);
+    			//Broadcaster Thread
+    			server.setBaseWaiting(false);
     			server.printLog("Login Successful. User " + this.userName + " logged in");
     			optionMenu();
     		}

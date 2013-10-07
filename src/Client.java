@@ -16,7 +16,9 @@ public class Client {
     private Scanner serverToClient;
     private Socket conn;
     private String host;
-    private int portNumber;
+    private boolean toLogOut;
+    private int clientPort;
+    private int id;
     
     /**
     * Client constructor
@@ -26,13 +28,27 @@ public class Client {
     * @param portNumber - the port at the server's IP address to connect to 
     * @throws IOException
     */
-    public Client(String host, int portNumber) throws IOException{
-    	conn = new Socket(host, portNumber);
+    public Client(String host, int clientPort) throws IOException{
+    	conn = new Socket(host, clientPort);
 		localInput = new Scanner(System.in);
 		clientToServer = new PrintWriter(conn.getOutputStream(), true);
 		serverToClient = new Scanner(new InputStreamReader(conn.getInputStream()));
 		this.host = host;
-		this.portNumber = portNumber;
+		this.clientPort = clientPort;
+		toLogOut = false;
+    }
+    
+    private void setClientID(int clientID){
+    	this.id = clientID;
+    }
+    public int getClientID(){
+    	return id;
+    }
+    public boolean toLogOut(){
+    	return toLogOut;
+    }
+    private void setLogOut(boolean toLogOut){
+    	this.toLogOut = toLogOut;
     }
 
     /**
@@ -49,6 +65,7 @@ public class Client {
     	}
     	else if(blockResponse.equals("ip not blocked")){
     		IPBlocked = false;
+    		setClientID(Integer.parseInt(outputFromServer()));
     	}
     	return IPBlocked;
     }
@@ -105,6 +122,7 @@ public class Client {
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
 		String command = localInput.nextLine();
 		inputToServer(command);
 		String serverResponse = outputFromServer();
@@ -114,6 +132,9 @@ public class Client {
 			}
 			else if (command.equals("wholasthr")){
 				wholasthr();
+			}
+			else if (command.equals("broadcast")){
+				broadcast();
 			}
 			else if (command.equals("messages")){
 				messages();
@@ -157,6 +178,12 @@ public class Client {
     		System.out.println(outputFromServer());
     	}
     }
+    public void broadcast(){     
+    	System.out.println(outputFromServer());
+    	inputToServer(localInput.nextLine());
+    	System.out.println(outputFromServer());
+    }
+    
     public void messages(){
     	int numMessages = Integer.parseInt(outputFromServer());
     	System.out.println(outputFromServer());
@@ -202,7 +229,7 @@ public class Client {
     }
     
     //Small integer checking method for checking message IDs
-    private static boolean isValidIDInteger(String s) {
+    public static boolean isValidIDInteger(String s) {
         boolean isInteger = true;
     	try { 
             int i = Integer.parseInt(s);
@@ -240,6 +267,7 @@ public class Client {
     * Logout of the server.
     */
 	public void logout(){
+		setLogOut(true);
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 	}
@@ -261,7 +289,7 @@ public class Client {
     * @return portNumber - the port number
     */
     public int getPortNumber(){
-    	return this.portNumber;
+    	return this.clientPort;
     }
     /**
     * getHost

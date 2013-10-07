@@ -5,13 +5,7 @@
  * @author James Wen - jrw2175
  */
 public enum ServerThreadType {
-	/**
-	 * CommandLine Thread
-	 * - The command line thread that interacts with the server administrator
-	 * to perform basic tasks.
-	 */
-	COMMANDLINE, 
-	
+		
 	/**
 	 * Base Thread
 	 * - The server thread that listens in and greets clients and creates new 
@@ -21,11 +15,23 @@ public enum ServerThreadType {
 	BASE, 
 	
 	/**
+	 * Thread for broadcasting to clients
+	 */
+	BROADCAST, 
+	
+	/**
 	 * Client Thread
 	 * - The server thread that interacts with the primary client thread and 
 	 * accepts client user input and sends server output.
 	 */
 	CLIENT, 
+	
+	/**
+	 * CommandLine Thread
+	 * - The command line thread that interacts with the server administrator
+	 * to perform basic tasks.
+	 */
+	COMMANDLINE, 
 	
 	/**
 	 * Placeholder null

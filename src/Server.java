@@ -25,12 +25,18 @@ public class Server {
 	private ArrayList<ServerThread> currentClients;
 	private ArrayList<BlockedIP> blockedIPs;   
 	private ArrayList<Message> masterMessageList;
+	
 	private PrintWriter logger;
+	//if baseWaiting is true, then currently waiting to create a client thread
+	private boolean baseWaiting;
+	private String broadcast;
 	private ScheduledExecutorService scheduler;
 	private ScheduledFuture<?> unblockerHandle;	
 	private long blocktime = 60000;
 	private int numLoginAttempts = 3;
-	
+	private static int clientID = 1;
+	private int broadcastThreadCount;
+	private int numBroadcastReceived;	
     /**
     * Server constructor
     * <p>
@@ -55,9 +61,48 @@ public class Server {
 		currentClients = new ArrayList<ServerThread>();
 		blockedIPs = new ArrayList<BlockedIP>();
 		masterMessageList = new ArrayList<Message>();
+		baseWaiting = true;
+		broadcast = "";
+		broadcastThreadCount = 0;
+		numBroadcastReceived = 0;
 		logger = new PrintWriter(new BufferedWriter(new FileWriter("server_log.txt", true)));
 	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
+	}
+	
+	public boolean getBaseWaiting(){
+		return baseWaiting;
+	}
+	public void setBaseWaiting(boolean isWaiting){
+		baseWaiting = isWaiting;
+	}
+	public void setBroadcast(String broadcast){
+		this.broadcast = broadcast;
+	}
+	public String getBroadcast(){
+		return broadcast;
+	}
+	public void logBroadcastThread(){
+		this.broadcastThreadCount++;
+	}
+	public void broadcastLogout(){
+		this.broadcastThreadCount--;
+	}
+	
+	public void broadcast(String broadcast, String userName){
+		this.broadcast = broadcast;
+		printLog(userName + " made a broadcast: " + broadcast);
+		this.numBroadcastReceived = 0;
+	}
+	public void logBroadcastReceived(){
+		if(++numBroadcastReceived == broadcastThreadCount){
+			broadcast = "";
+			numBroadcastReceived = 0;
+		}
+	}
+
+	public int getNextClientID(){
+		return clientID++;
 	}
 	
     /**

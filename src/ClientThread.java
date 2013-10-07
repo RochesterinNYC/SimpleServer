@@ -1,3 +1,9 @@
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Scanner;
+
 /**
 * <b>ClientThread Class</b>
 * <p>
@@ -16,25 +22,44 @@ public class ClientThread extends Thread{
 	*/
 	public ClientThread(Client client){
 		this.client = client;
-	}
+	}	
 	
-	/**
-	* run
-	* <p>
-	* Runs the thread, checks if the IP it's running on is blocked by the server
-	* and if not, then initiates login protocol
-	* @param client - the client 
-	*/
-	public void run(){
+	public void begin(){
 		if(client.checkIPBlocked()){
 			System.out.println("This IP Address is currently blocked due to repeated failed login attempts.");
 		}
 		//IP is not blocked - initiate login
-		else if(client.login()){
+		if(client.login()){
+			ClientThread broadcastThread = new ClientThread(client);
+			broadcastThread.start();
 	    	client.optionMenu();
 		}
 	}
-	
-	
+
+	public void run() {
+		try {
+			Socket broadcastSocket = new Socket(client.getHost(), client.getPortNumber());
+			Scanner broadcastFromServer = new Scanner(new InputStreamReader(broadcastSocket.getInputStream()));
+			PrintWriter sendBackToServer = new PrintWriter(broadcastSocket.getOutputStream(), true);
+			String broadcastMessage = "";
+			while(!client.toLogOut()){
+				broadcastMessage = broadcastFromServer.nextLine();
+				sendBackToServer.println("ack");
+				if(!broadcastMessage.equals("")){
+					System.out.println("Broadcast: " + broadcastMessage);
+				}
+				sleep(500);
+			}
+			broadcastMessage = broadcastFromServer.nextLine();
+			sendBackToServer.println("logout");
+		}
+		catch (IOException e){
+			System.out.println("oops!");
+		} 
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+	}
 	
 }
