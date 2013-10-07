@@ -30,7 +30,7 @@ public class ConsoleThread extends Thread{
 			"unblock_all", "accounts", "view_blocktime","change_blocktime",
 			"view_number_login_attempts", "change_number_login_attempts",
 			"number_threads", "current_ips","last_hr", "view_all_messages", 
-			"version", "exit"};
+			"version", "shut_logger"};
 	}
 	
 	/**
