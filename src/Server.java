@@ -14,9 +14,10 @@ import java.util.concurrent.ScheduledFuture;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
-* <b>Client Class</b>
+* <b>Server Class</b>
 * <p>
-* Represents the client that interacts with the server.
+* Represents the server that interacts with clients and keeps track of messages,
+* connected clients, blocked IPs, and user accounts
 * @author James Wen - jrw2175
 */
 public class Server {
@@ -25,18 +26,21 @@ public class Server {
 	private ArrayList<ServerThread> currentClients;
 	private ArrayList<BlockedIP> blockedIPs;   
 	private ArrayList<Message> masterMessageList;
-	
 	private PrintWriter logger;
-	//if baseWaiting is true, then currently waiting to create a client thread
+	//if baseWaiting is true, then base server thread is currently waiting 
+	//to create a client thread (false --> broadcast thread)
 	private boolean baseWaiting;
-	private String broadcast;
+	private static int clientID = 1;
 	private ScheduledExecutorService scheduler;
 	private ScheduledFuture<?> unblockerHandle;	
+	//IP Block Related
 	private long blocktime = 60000;
 	private int numLoginAttempts = 3;
-	private static int clientID = 1;
+	//Broadcast Protocol Related
+	private String broadcast;
 	private int broadcastThreadCount;
 	private int numBroadcastReceived;	
+	
     /**
     * Server constructor
     * <p>
@@ -68,41 +72,6 @@ public class Server {
 		logger = new PrintWriter(new BufferedWriter(new FileWriter("server_log.txt", true)));
 	    printLog("Server is up and listening on port " + serverPort);
 	    setUpUnblocker();
-	}
-	
-	public boolean getBaseWaiting(){
-		return baseWaiting;
-	}
-	public void setBaseWaiting(boolean isWaiting){
-		baseWaiting = isWaiting;
-	}
-	public void setBroadcast(String broadcast){
-		this.broadcast = broadcast;
-	}
-	public String getBroadcast(){
-		return broadcast;
-	}
-	public void logBroadcastThread(){
-		this.broadcastThreadCount++;
-	}
-	public void broadcastLogout(){
-		this.broadcastThreadCount--;
-	}
-	
-	public void broadcast(String broadcast, String userName){
-		this.broadcast = broadcast;
-		printLog(userName + " made a broadcast: " + broadcast);
-		this.numBroadcastReceived = 0;
-	}
-	public void logBroadcastReceived(){
-		if(++numBroadcastReceived == broadcastThreadCount){
-			broadcast = "";
-			numBroadcastReceived = 0;
-		}
-	}
-
-	public int getNextClientID(){
-		return clientID++;
 	}
 	
     /**
@@ -145,7 +114,7 @@ public class Server {
     * <p>
     * Returns whether the inputed ip is blocked by the server or not.
     * @param ip - IP address to check
-    * @param isBlocked - whether that IP is blocked
+    * @return isBlocked - whether that IP is blocked
     */
 	public boolean isBlocked(InetAddress ip){
 		boolean isBlocked = false;
@@ -181,7 +150,92 @@ public class Server {
 	
 	//Client Operations-related methods
 	
+	//Broadcast-related methods
+    /**
+    * getBaseWaiting
+    * <p>
+    * Returns whether the server/base server thread is waiting to create a 
+    * client server thread (or a broadcast server thread if false)
+    * @return baseWaiting - whether to create client server thread
+    */
+	public boolean getBaseWaiting(){
+		return baseWaiting;
+	}
+    /**
+    * setBaseWaiting
+    * <p>
+    * Sets whether the server/base server thread is waiting to create a 
+    * client server thread (or a broadcast server thread if false)
+    * @param isWaiting - whether server is waiting to create client server thread
+    */
+	public void setBaseWaiting(boolean isWaiting){
+		baseWaiting = isWaiting;
+	}
+    /**
+    * getBroadcast
+    * <p>
+    * Gets the current broadcast info that the server wants to send
+    * @return broadcast - current broadcast info
+    */
+	public String getBroadcast(){
+		return broadcast;
+	}
+    /**
+    * logBroadcastThread
+    * <p>
+    * Logs another client broadcast thread that's connected to one of this server's
+    * broadcast threads
+    */
+	public void logBroadcastThread(){
+		this.broadcastThreadCount++;
+	}
+    /**
+    * broadcastLogOut
+    * <p>
+    * Logs that a client broadcast thread that's connected to one of this server's
+    * broadcast threads has logged out
+    */
+	public void broadcastLogout(){
+		this.broadcastThreadCount--;
+	}
+    /**
+    * broadcast
+    * <p>
+    * Sets the broadcast info and reinitializes the counter for how many client
+    * broadcast threads have received and acknowledged the broadcast
+    * @param broadcast - the content of the broadcast
+    * @param userName - username of account that requested the broadcast to be sent
+    */
+	public void broadcast(String broadcast, String userName){
+		this.broadcast = broadcast;
+		printLog(userName + " made a broadcast: " + broadcast);
+		this.numBroadcastReceived = 0;
+	}
+    /**
+    * logBroadcastReceived
+    * <p>
+    * Logs that a broadcast was received and acknowledged by a client broadcast
+    * thread.
+    * Reinitializes the server broadcast info and status when all client broadcast
+    * threads have received and acknowledged the message (when # acknowledgments 
+    * is equal to number of connected client broadcast threads).
+    */
+	public void logBroadcastReceived(){
+		if(++numBroadcastReceived == broadcastThreadCount){
+			broadcast = "";
+			numBroadcastReceived = 0;
+		}
+	}
 	
+	//Messages-related methods
+    /**
+    * isValidAccount
+    * <p>
+    * Returns whether an account username is valid (belongs to an account on
+    * the server).
+    * @param accountName - username to check if valid
+    * @return isValid - whether the requested accoutName is valid
+    */
 	public boolean isValidAccount(String accountName){
 		boolean isValid = false;
 		for(Account account : accounts){
@@ -191,7 +245,17 @@ public class Server {
 		}
 		return isValid;
 	}
-	//userName required to prevent client from accessing messages on other accounts
+    /**
+    * isValidMessageOfAccount
+    * <p>
+    * Checks whether the message with the ID id was sent to and belongs to the 
+    * account with the username userName.
+    * Required to prevent client from accessing messages that were sent to
+    * other accounts.
+    * @param id - ID of message
+    * @param userName - username of account to check
+    * @return isValid - whether the message with that id belongs to account
+    */
 	public boolean isValidMessageOfAccount(int id, String userName){
 		boolean isValid = false;
 		Account account = getAccount(userName);
@@ -202,9 +266,13 @@ public class Server {
 		}
 		return isValid;
 	}
-	public ArrayList<Message> getAllMessages(){
-		return masterMessageList;
-	}
+    /**
+    * getAccount
+    * <p>
+    * Returns the account that has the queried username.
+    * @param accountName - the requested username
+    * @return queryAccount - the account that has the username
+    */
 	public Account getAccount(String accountName){
 		Account queryAccount = null;
 		for(Account account : accounts){
@@ -214,6 +282,14 @@ public class Server {
 		}
 		return queryAccount;
 	}
+    /**
+    * getMessage
+    * <p>
+    * Returns the message of that id that the user received.
+    * @param id - the id of the message
+    * @param userName - username of account that message was sent to
+    * @return queryMessage - the requested message
+    */
 	public Message getMessage(int id, String userName){
 		Message queryMessage = null;
 		Account account = getAccount(userName);
@@ -224,12 +300,21 @@ public class Server {
 		}
 		return queryMessage;
 	}
+    /**
+    * processNewMessage
+    * <p>
+    * Adds the newly sent message to the server's master list of all messages sent
+    * and adds the message to the account that it was sent to.
+    * Message sending is logged in server log.
+    * @param message - the message that a client just sent
+    */
 	public void processNewMessage(Message message){
 		masterMessageList.add(message);
 		Account account = message.getRecipient();
 		account.newMessage(message);
 		printLog(message.getLogMessage());
 	}
+	
     /**
     * addToClients
     * <p>
@@ -256,6 +341,7 @@ public class Server {
 		}
 		return currentUsers;
 	}
+	
     /**
     * getUsersLastHr
     * <p>
@@ -335,7 +421,17 @@ public class Server {
     public ServerSocket getServerSocket(){
     	return serverSocket;
     }
-    
+    /**
+     * getNextClientID
+     * <p>
+     * Returns the next client ID to be assigned to a client that's just logged
+     * onto the server.
+     * @return next client ID
+     */
+	public int getNextClientID(){
+		return clientID++;
+	}
+	
     //Mostly console related operations
     /**
     * getBlocktime
@@ -373,7 +469,6 @@ public class Server {
 	public void changeNumLoginAttempts(int numLoginAttempts){
 		this.numLoginAttempts = numLoginAttempts;
 	}	
-
     /**
     * removeAllBlockedIPs
     * <p>
@@ -382,7 +477,15 @@ public class Server {
 	public void removeAllBlockedIPs(){
 		blockedIPs = new ArrayList<BlockedIP>();
 	}
-	
+    /**
+    * getAllMessages
+    * <p>
+    * Returns all messages that have been sent between users on the server.
+    * @return masterMessageList - all messages
+    */
+	public ArrayList<Message> getAllMessages(){
+		return masterMessageList;
+	}
     /**
     * getAccounts
     * <p>

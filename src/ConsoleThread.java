@@ -26,22 +26,22 @@ public class ConsoleThread extends Thread{
 	public ConsoleThread(Server server){
 		this.server = server;
 		//List of currently implemented commands
-		this.commandList = new String[]{"help", "blocked_ips", 
+		this.commandList = new String[]{"help", "broadcast", "blocked_ips", 
 			"unblock_all", "accounts", "view_blocktime","change_blocktime",
 			"view_number_login_attempts", "change_number_login_attempts",
 			"number_threads", "current_ips","last_hr", "view_all_messages", 
-			"version", "shut_logger"};
+			"version", "exit"};
 	}
 	
 	/**
 	* <b>run</b>
 	* <p>
-	* Runs the console thread and greets the user and starts the prompt.
+	* Runs the console thread and greets the server admin and starts the prompt.
 	*/
 	public void run(){
 		consoleScanner = new Scanner(System.in);
 		consolePrint("Welcome to SimpleServer v1.0! Enter 'help' for a list of commands.");
-		consolePrint("Please also remember to shut the logger ('shut_logger') before you exit!");
+		consolePrint("Please also remember to shut the logger ('shut_logger') before you shut down the server!");
 		prompt();
 	}
 	
@@ -94,6 +94,9 @@ public class ConsoleThread extends Thread{
 		try{
 			if(command.equals("help")){
 				help();
+			}
+			else if(command.equals("broadcast")){
+				broadcast();
 			}
 			else if(command.equals("blocked_ips")){
 				viewBlockedIPs();
@@ -149,6 +152,8 @@ public class ConsoleThread extends Thread{
 	private void help(){
 		consolePrint("help");
 		consolePrint("- View all commands and what they do.");
+		consolePrint("broadcast");
+		consolePrint("- Broadcast a message to all currently active clients.");
 		consolePrint("blocked_ips");
 		consolePrint("- View all currently blocked IPs.");
 		consolePrint("unblock_all");
@@ -177,6 +182,16 @@ public class ConsoleThread extends Thread{
 		consolePrint("- Safely close the logging stream.");
 	}
 	
+	/**
+	* <b>broadcast</b>
+	* <p>
+	* Broadcast a message to all currently active clients.
+	*/
+	private void broadcast(){
+		consolePrint("Please enter in the broadcast message you wish to send.");
+		server.broadcast(consoleScanner.nextLine(), "Server Admin");
+		consolePrint("Your broadcast was sent.");
+	}
 	/**
 	* <b>viewBlockedIPs</b>
 	* <p>
@@ -278,6 +293,11 @@ public class ConsoleThread extends Thread{
 			consolePrint(user);
 		}
 	}
+	/**
+	* <b>viewAllMessages</b>
+	* <p>
+	* Runs the console thread and greets the user and starts the prompt.
+	*/
 	private void viewAllMessages(){
 		ArrayList<Message> allMessages = server.getAllMessages();
 		for(Message message : allMessages ){

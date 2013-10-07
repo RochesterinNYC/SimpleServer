@@ -38,15 +38,25 @@ public class Client {
 		toLogOut = false;
     }
     
-    private void setClientID(int clientID){
-    	this.id = clientID;
-    }
-    public int getClientID(){
-    	return id;
-    }
+    /**
+     * toLogOut
+     * <p>
+     * Returns whether this client is in the process of logging out
+     * This is essential in communicating with the parallel client thread that
+     * is listening for and reporting server broadcasts. Once this client is 
+     * set to log out, then this method will tell the parallel broadcast thread
+     * to end as well.
+     * @return toLogOut - whether this client should log out
+     */
     public boolean toLogOut(){
     	return toLogOut;
     }
+    /**
+     * setLogOut
+     * <p>
+     * Set the client to log out or not.
+     * @param toLogOut - whether this client should log out
+     */
     private void setLogOut(boolean toLogOut){
     	this.toLogOut = toLogOut;
     }
@@ -178,19 +188,33 @@ public class Client {
     		System.out.println(outputFromServer());
     	}
     }
+    /**
+     * broadcast
+     * <p>
+     * Sends info to the server telling it to broadcast a message to all currently
+     * logged on clients.
+     */
     public void broadcast(){     
     	System.out.println(outputFromServer());
     	inputToServer(localInput.nextLine());
     	System.out.println(outputFromServer());
     }
-    
+    /**
+     * messages
+     * <p>
+     * Allows the client to check the messages that have been sent to the account
+     * that it is logged on to the server with.
+     */
     public void messages(){
     	int numMessages = Integer.parseInt(outputFromServer());
     	System.out.println(outputFromServer());
+    	//Show the messages that this account has received
     	for(int i = 0; i < numMessages; i++){
     		System.out.println(outputFromServer());
     		System.out.println(outputFromServer());
+    		System.out.println(outputFromServer());
     	}
+    	//Get a valid message ID from client or return to menu
     	boolean validID = false;
     	String serverResponse = "";
     	System.out.println(outputFromServer());
@@ -220,15 +244,23 @@ public class Client {
             	messageID = localInput.nextLine();
     		}
     	}
-    	//Print message
+    	//Print message with body content
     	if(serverResponse.equals("success")){
     		System.out.println(outputFromServer());
+        	System.out.println(outputFromServer());
         	System.out.println(outputFromServer());
         	System.out.println(outputFromServer());
     	}
     }
     
-    //Small integer checking method for checking message IDs
+    /**
+     * isValidIDInteger
+     * <p>
+     * Small integer checking method for checking user input to see if it could
+     * match a message
+     * @param - s - the string version of the id to be checked
+     * @return whether the id could be a valid message ID
+     */
     public static boolean isValidIDInteger(String s) {
         boolean isInteger = true;
     	try { 
@@ -241,7 +273,12 @@ public class Client {
         }
         return isInteger;
     }
-
+    /**
+     * send
+     * <p>
+     * Allows the client to send a message  with a one line subject and body to
+     * another account (has to be a valid accout on the server).
+     */
     public void send(){
     	boolean isValidAccount = false;
     	String serverResponse;
@@ -264,12 +301,21 @@ public class Client {
     /**
     * logout
     * <p>
-    * Logout of the server.
+    * Logout of the server. (Also ends the concurrently running client thread 
+    * that has been listening for serve broadcasts).
     */
 	public void logout(){
 		setLogOut(true);
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
+		localInput.close();
+    	serverToClient.close();
+    	clientToServer.close();
+    	try {
+			conn.close();
+		} catch (IOException e) {
+			System.out.println("Error occurred in disconnecting from server.");
+		}
 	}
     
     /**
@@ -301,6 +347,25 @@ public class Client {
     	return this.host;
     }
     /**
+     * setClientID
+     * <p>
+     * Sets the clientID of this client. (No two clients will have same ID.)
+     * @param clientID - ID
+     */
+     private void setClientID(int clientID){
+     	this.id = clientID;
+     }
+     
+     /**
+     * setClientID
+     * <p>
+     * Sets the clientID of this client. (No two clients will have same ID.)
+     * @param clientID - ID
+     */
+     public int getClientID(){
+     	return id;
+     }
+    /**
     * inputToServer
     * <p>
     * Input a query or response to the server.
@@ -318,4 +383,5 @@ public class Client {
     public String outputFromServer(){
     	return serverToClient.nextLine();
 	}
+    
 }

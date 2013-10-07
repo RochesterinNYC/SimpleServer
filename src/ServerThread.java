@@ -73,20 +73,23 @@ public class ServerThread extends Thread{
 		}
 	}
 	
-	
-
     /**
     * run
     * <p>
-    * Starts the thread and checks if the client's IP is blocked, and if not,
-    * initiates login.
+    * Starts the thread and performs operations based on whether this thread is
+    * a broadcast or client thread. 
+    * If client, checks if the client's IP is blocked, and if not, initiates login
+    * and server options.
+    * If broadcast, perform broadcast operations.
     */
 	public void run(){
 		//Check if client's IP is currently blocked
 		if(server.isBlocked(clientSocket.getInetAddress())){
 			inputToClient("ip blocked");
 		}
-		else{			
+		//Client IP not blocked
+		else{		
+			//Is a client server thread
 			if (this.threadType == ServerThreadType.CLIENT){
 				inputToClient("ip not blocked");
 				inputToClient(Integer.toString(server.getNextClientID()));
@@ -94,33 +97,52 @@ public class ServerThread extends Thread{
 					login();
 				}
 				catch(IOException e){
-	    		
+					server.printLog("Error occurred with login for client with IP "
+				                     + clientSocket.getInetAddress().toString());
 				}
 			}
+			//Is a broadcast server thread
 			if (this.threadType == ServerThreadType.BROADCAST){
-				server.setBaseWaiting(true);
-				String broadcastMessage = "";
-				String clientResponse = "";
-				while(true){
-					broadcastMessage = server.getBroadcast();
-					inputToClient(broadcastMessage);
-					clientResponse = outputFromClient();
-					if(clientResponse.equals("ack")){
-						server.logBroadcastReceived();
-						try {
-							sleep(500);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-					else if(clientResponse.equals("logout")){
-						//End thread
-						return;
-					}
-				}
+				broadcastOperate();
 			}
 		}
 	}	
+	
+    /**
+    * broadcastOperate
+    * <p>
+    * Periodically send broadcast info to client broadcast threads and receive
+    * acknowledgment messages from client.
+    */
+	private void broadcastOperate(){
+		//Set the base server thread back to creating server client threads
+		server.setBaseWaiting(true);
+		String broadcastMessage = "";
+		String clientResponse = "";
+		//Continually send broadcasts to client broadcast thread and
+		//receive acknowledgment messages
+		while(true){
+			broadcastMessage = server.getBroadcast();
+			inputToClient(broadcastMessage);
+			clientResponse = outputFromClient();
+			//Client has received message
+			if(clientResponse.equals("ack")){
+				server.logBroadcastReceived();
+				try {
+					sleep(500);//Reduce server load
+				} catch (InterruptedException e) {
+					server.printLog("Interruption occurred on broadcast thread " +
+							        "for client with IP " + 
+							        clientSocket.getInetAddress().toString());
+				}
+			}
+			//Client is to logout
+			else if(clientResponse.equals("logout")){
+				//End thread
+				return;
+			}
+		}
+	}
 
     /**
     * optionMenu
@@ -131,7 +153,9 @@ public class ServerThread extends Thread{
     public void optionMenu(){
     	String choice = "";
     	boolean correctCommand = false;
-    	while (!correctCommand){ 		
+    	//Get a correct command from client
+    	while (!correctCommand){ 	
+    		//Present client with options
     		inputToClient("These are your options:");
     		inputToClient("- Enter 'whoelse' to see what other users are connected on this server.");
     		inputToClient("- Enter 'wholasthr' to see what users have connected within the last hour.");
@@ -140,6 +164,7 @@ public class ServerThread extends Thread{
     		inputToClient("- Enter 'send' to send a message to an account.");
     		inputToClient("- Enter 'logout' to logout from this account.");
     		inputToClient("What would you like to do?");
+    		//Process client command
     		choice = outputFromClient();
     		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") 
     		   || choice.trim().equals("broadcast") || choice.trim().equals("messages") 
@@ -175,27 +200,42 @@ public class ServerThread extends Thread{
     	optionMenu();
     }
     
+    //Client Options
+    /**
+    * broadcast
+    * <p>
+    * Send a broadcast to all currently logged on clients.
+    */
     public void broadcast(){
     	inputToClient("Please enter the message you wish to broadcast to all users (one line only please).");
     	server.broadcast(outputFromClient(), userName);
     	inputToClient("Your message was broadcasted.");
     }
 
-    //User Options
+    /**
+    * messages
+    * <p>
+    * Let client view the messages sent to the account that he or she is logged
+    * in on.
+    */
     public void messages(){
     	ArrayList<Message> accountMessages = server.getAccount(userName).getMessages();
     	inputToClient(Integer.toString(accountMessages.size()));
+    	//Present all account messages
     	inputToClient("Here are the messages for " + this.userName + ":");
     	for(Message message : accountMessages){
     		inputToClient("Msg ID: " + message.getID());
+    		inputToClient("From: " + message.getSender().getUserName());
     		inputToClient("   Subject: " + message.getSubject());
     	}
+    	//Get the message ID of the message the client wishes to view
     	inputToClient("Please enter in the ID of the message you wish to view.");
     	inputToClient("Or enter 'menu' to return to the menu.");
     	String clientResponse = outputFromClient();
     	if(clientResponse.equals("menu")){
     		return;
     	}
+    	
     	int messageID = Integer.parseInt(clientResponse);
     	while(!server.isValidMessageOfAccount(messageID, userName)){//while message ID is invalid
     		inputToClient("failure");
@@ -209,13 +249,22 @@ public class ServerThread extends Thread{
         	messageID = Integer.parseInt(clientResponse);
     	}
     	inputToClient("success");
+    	//Present message to client
     	Message queryMessage = server.getMessage(messageID, userName);
 		inputToClient("Msg ID: " + queryMessage.getID());
+		inputToClient("  From: " + queryMessage.getSender().getUserName());
 		inputToClient("   Subject: " + queryMessage.getSubject());
 		inputToClient("   Body: " + queryMessage.getBody());
     }
     
+    /**
+    * send
+    * <p>
+    * Let client send a message from the account that he or she is logged in on
+    * to another account
+    */
     public void send(){
+    	//Get recipient account username
     	inputToClient("Please enter in the username of the account you wish to send a message to.");
     	String recipient = outputFromClient();
     	while(!server.isValidAccount(recipient)){
@@ -224,10 +273,12 @@ public class ServerThread extends Thread{
     		recipient = outputFromClient();
     	}
     	inputToClient("success");
+    	//Get message subject and content body
     	inputToClient("Please enter the subject line.");
     	String subject = outputFromClient();
     	inputToClient("Please enter the message body (one line only as of Simple Server version 1.0).");
         String body = outputFromClient(); 
+        //Send message
         server.processNewMessage(new Message(server.getAccount(this.userName), 
 				 				 server.getAccount(recipient), subject, body));
         inputToClient("Your message has been sent!");
@@ -256,6 +307,7 @@ public class ServerThread extends Thread{
     		}	
     	}
     }  
+    
     /**
     * wholasthr
     * <p>
@@ -268,6 +320,7 @@ public class ServerThread extends Thread{
     		inputToClient(user);   
     	}
     }
+    
     /**
     * logout
     * <p>
@@ -279,6 +332,15 @@ public class ServerThread extends Thread{
     	server.printLog("Logout Successful. User " + this.userName + " logged out");
     	inputToClient("You are now logged out from SimpleServer and the account under " + this.userName);
     	inputToClient("Have a nice day!");
+    	//Close all IO and socket connection
+    	serverToClient.close();
+    	clientToServer.close();
+    	try {
+			clientSocket.close();
+		} catch (IOException e) {
+			server.printLog("Error occurred in disconnecting from client with IP "
+							+ clientSocket.getInetAddress().toString());
+		}
     }
     
     /**

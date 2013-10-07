@@ -72,14 +72,25 @@ public class Account {
 	}
 	
 	//Message Functionality methods
+	/**
+	* <b>getMessages</b>
+	* <p>
+	* Get the messages that this account has received.
+	* @return messages - account messages
+	*/
 	public ArrayList<Message> getMessages(){
 		return messages;
 	}
 	
+	/**
+	* <b>newMessage</b>
+	* <p>
+	* Adds a message to this account's received messages
+	* @param message - new message that this account has received
+	*/
 	public void newMessage(Message message){
 		messages.add(message);
 	}
-
 	
 	/**
 	* <b>getUserName</b>

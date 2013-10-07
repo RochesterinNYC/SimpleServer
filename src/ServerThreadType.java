@@ -15,7 +15,8 @@ public enum ServerThreadType {
 	BASE, 
 	
 	/**
-	 * Thread for broadcasting to clients
+	 * Broadcast Thread
+	 * - Server thread that sends broadcast info and messages to clients
 	 */
 	BROADCAST, 
 	
