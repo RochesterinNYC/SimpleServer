@@ -30,7 +30,7 @@ public class ConsoleThread extends Thread{
 			"unblock_all", "accounts", "view_blocktime","change_blocktime",
 			"view_number_login_attempts", "change_number_login_attempts",
 			"number_threads", "current_ips","last_hr", "view_all_messages", 
-			"version", "shut_logger"};
+			"version", "file_send", "shut_logger"};
 	}
 	
 	/**
@@ -134,6 +134,9 @@ public class ConsoleThread extends Thread{
 			else if(command.equals("version")){
 				version();
 			}
+			else if(command.equals("file_send")){
+				fileSend();
+			}
 			else if(command.equals("shut_logger")){
 				shutLogger();
 			}
@@ -178,6 +181,8 @@ public class ConsoleThread extends Thread{
 		consolePrint("- View all the messages on this server that have been sent by users.");
 		consolePrint("version");
 		consolePrint("- View the version of this server.");
+		consolePrint("file_send");
+		consolePrint("- Send a file to a receiving client through simulated TCP.");
 		consolePrint("shut_logger");
 		consolePrint("- Safely close the logging stream.");
 	}
@@ -336,4 +341,24 @@ public class ConsoleThread extends Thread{
 	private void consolePrint(String print){
 		System.out.println("    " + print);
 	}
+	
+	private void fileSend(){
+		boolean senderCommandValid = false;
+		String[] arguments;
+		do {
+			System.out.println("Please enter in the proper command for initiating " +
+				               "the file transfer through tcp simulation. The format is as follows:");
+			System.out.println("sender [file name] [remote IP] [remote port] " +
+							   "[ack port number] [window size] [log file name]");
+			System.out.println("Example:");
+			System.out.println("sender file.txt 128.59.15.38 20000 20001 1152 logfile.txt");
+			String senderCommand = consoleScanner.nextLine();
+			arguments = senderCommand.split(" ");
+			if (arguments.length == 7){
+				senderCommandValid = true;
+			}
+		} while(!senderCommandValid);
+		server.tcpFileSend();
+	}
+	
 }

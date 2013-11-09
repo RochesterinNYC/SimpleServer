@@ -162,13 +162,15 @@ public class ServerThread extends Thread{
     		inputToClient("- Enter 'broadcast' to broadcast a one-line message to other logged-in clients.");
     		inputToClient("- Enter 'messages' to view the messages users have sent to this account.");
     		inputToClient("- Enter 'send' to send a message to an account.");
+    		inputToClient("- Enter 'file' to receive a file via simulated TCP from the server.");
     		inputToClient("- Enter 'logout' to logout from this account.");
     		inputToClient("What would you like to do?");
     		//Process client command
     		choice = outputFromClient();
     		if(choice.trim().equals("whoelse") || choice.trim().equals("wholasthr") 
     		   || choice.trim().equals("broadcast") || choice.trim().equals("messages") 
-    		   || choice.trim().equals("send") || choice.trim().equals("logout")){
+    		   || choice.trim().equals("send") || choice.trim().equals("file") 
+    		   || choice.trim().equals("logout")){
     			correctCommand = true;
     			inputToClient("success");
     			//No String switching in < Java 1.7...
@@ -186,6 +188,9 @@ public class ServerThread extends Thread{
     			}
     			else if(choice.trim().equals("send")){
     				send();
+    			}
+    			else if(choice.trim().equals("file")){
+    				waitTCPFinish();
     			}
     			else if(choice.trim().equals("logout")){
     				logout();
@@ -417,5 +422,10 @@ public class ServerThread extends Thread{
     public String outputFromClient(){
     	return clientToServer.nextLine();
 	}
+    
+    
+    public void waitTCPFinish(){
+    	//tcpFileSend();
+    }
     
 }

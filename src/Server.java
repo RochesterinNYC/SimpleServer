@@ -549,4 +549,8 @@ public class Server {
 	public void closeLogger(){
 		logger.close();
 	}
+
+    public void tcpFileSend(){
+    	
+    }
 }

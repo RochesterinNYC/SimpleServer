@@ -133,6 +133,7 @@ public class Client {
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
 		System.out.println(outputFromServer());
+		System.out.println(outputFromServer());
 		String command = localInput.nextLine();
 		inputToServer(command);
 		String serverResponse = outputFromServer();
@@ -151,6 +152,9 @@ public class Client {
 			}
 			else if (command.equals("send")){
 				send();
+			}
+			else if (command.equals("file")){
+				file();
 			}
 			else if (command.equals("logout")){
 				logout();
@@ -383,5 +387,19 @@ public class Client {
     public String outputFromServer(){
     	return serverToClient.nextLine();
 	}
+    
+    
+    public void file(){
+    	System.out.println("Please enter in the proper command for initiating " +
+    			           "the file transfer through tcp simulation. The format is as follows:");
+    	System.out.println("receiver [file name] [listening port] [remote IP] [remote port] [log file name]");
+    	System.out.println("Example:"); 
+    	System.out.println("receiver file.txt 20000 128.59.15.37 20001 logfile.txt ");
+        tcpFileReceive();
+    }
+    
+    public void tcpFileReceive(){
+    	
+    }
     
 }
