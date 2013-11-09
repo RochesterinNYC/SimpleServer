@@ -358,7 +358,7 @@ public class ConsoleThread extends Thread{
 				senderCommandValid = true;
 			}
 		} while(!senderCommandValid);
-		server.tcpFileSend();
+		server.tcpFileSend(arguments);
 	}
 	
 }

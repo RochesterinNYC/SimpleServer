@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -550,7 +551,15 @@ public class Server {
 		logger.close();
 	}
 
-    public void tcpFileSend(){
-    	
+    public void tcpFileSend(String[] arguments){
+    	try {
+			TCPSender sender = new TCPSender(arguments[1], InetAddress.getByName(arguments[2]), Integer.parseInt(arguments[3]), Integer.parseInt(arguments[4]), Integer.parseInt(arguments[5]), arguments[6]);
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }

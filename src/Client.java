@@ -1,7 +1,9 @@
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
 
 /**
@@ -390,16 +392,30 @@ public class Client {
     
     
     public void file(){
-    	System.out.println("Please enter in the proper command for initiating " +
-    			           "the file transfer through tcp simulation. The format is as follows:");
-    	System.out.println("receiver [file name] [listening port] [remote IP] [remote port] [log file name]");
-    	System.out.println("Example:"); 
-    	System.out.println("receiver file.txt 20000 128.59.15.37 20001 logfile.txt ");
-        tcpFileReceive();
-    }
-    
-    public void tcpFileReceive(){
-    	
-    }
-    
+    	boolean receiverCommandValid = false;
+		String[] arguments;
+    	do{
+    		System.out.println("Please enter in the proper command for initiating " +
+    						   "the file transfer through tcp simulation. The format is as follows:");
+    		System.out.println("receiver [file name] [listening port] [remote IP] [remote port] [log file name]");
+    		System.out.println("Example:"); 
+    		System.out.println("receiver file.txt 20000 128.59.15.37 20001 logfile.txt ");
+    		String senderCommand = localInput.nextLine();
+			arguments = senderCommand.split(" ");
+			if (arguments.length == 6){
+				receiverCommandValid = true;
+			}
+    	}while(!receiverCommandValid);
+    	try {
+			TCPReceiver receiver = new TCPReceiver(arguments[1], Integer.parseInt(arguments[2]), InetAddress.getByName(arguments[3]), Integer.parseInt(arguments[4]), arguments[5]);
+		} catch (NumberFormatException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	//receiver.receive();
+   }
+        
 }
