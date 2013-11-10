@@ -14,9 +14,7 @@ public class TCPSender {
 	private int ackPort;
 	private int windowSize;
 	private String logFileName;
-	private final int fileSendPort = 9999;
-	private DatagramSocket ackSocket;
-	private DatagramSocket sendSocket;
+	private DatagramSocket packetSocket;
 	
 	private final int SEGSIZE = 576;
 	private final int HEADSIZE = 20;
@@ -33,8 +31,7 @@ public class TCPSender {
 		this.windowSize = windowSize;
 		this.logFileName = logFileName;
 		try {
-			this.ackSocket = new DatagramSocket(this.ackPort);
-			this.sendSocket = new DatagramSocket(this.fileSendPort);
+			this.packetSocket = new DatagramSocket(this.ackPort);
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -59,11 +56,13 @@ public class TCPSender {
 		int numPacketsSent;
 		long numBytesSent;
 		int numPacketsResent;
+		Packet packetSet[] = new Packet[numPackets];
+		packetSet = prepPackets();
 		
 		while(packetsAcknowledged != numPackets){
 			packetReceived = false;
 			firstTimePacket = true;
-			//prepPacket(); - Prepare the next packet
+			//prepNextPacket();
 			while(!packetReceived){
 				//sendPacket
 				//numPacketsSent++
@@ -81,5 +80,13 @@ public class TCPSender {
 		//numPacketsSent++
 		//numBytesSent increase
 		//Print Stats
+	}
+	int sourcePortNumber, int destPortNumber, int sequenceNumber, 
+	  int ackNumber, int checkSum, String purposeCode, byte[] data
+	private Packet[] prepPackets(){
+		Packet packetSet[] = new Packet[numPackets];
+		for (int i = 0; i < numPackets; i++){
+			new Packet(ackPort, remotePort, i, , , , )
+		}
 	}
 }
