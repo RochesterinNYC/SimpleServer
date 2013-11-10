@@ -554,7 +554,8 @@ public class Server {
     public void tcpFileSend(String[] arguments){
     	try {
 			TCPSender sender = new TCPSender(arguments[1], InetAddress.getByName(arguments[2]), Integer.parseInt(arguments[3]), Integer.parseInt(arguments[4]), Integer.parseInt(arguments[5]), arguments[6]);
-		} catch (NumberFormatException e) {
+		    sender.send();
+    	} catch (NumberFormatException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnknownHostException e) {

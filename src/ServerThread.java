@@ -423,7 +423,6 @@ public class ServerThread extends Thread{
     	return clientToServer.nextLine();
 	}
     
-    
     public void waitTCPFinish(){
     	//tcpFileSend();
     }

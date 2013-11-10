@@ -408,14 +408,14 @@ public class Client {
     	}while(!receiverCommandValid);
     	try {
 			TCPReceiver receiver = new TCPReceiver(arguments[1], Integer.parseInt(arguments[2]), InetAddress.getByName(arguments[3]), Integer.parseInt(arguments[4]), arguments[5]);
-		} catch (NumberFormatException e) {
+			receiver.receive();
+    	} catch (NumberFormatException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    	//receiver.receive();
    }
         
 }
