@@ -26,6 +26,16 @@ public class TCPReceiver {
 	}
 	
 	public void receive(){
-		
+		boolean tcpComplete = false;
+		while(!tcpComplete){
+			//receive a packet
+			//if packet is corrupt
+			  //send corrupt ACK
+		    //if packet is fine
+			  //send regular ACK
+			//if packet is FIN
+			  //tcpComplete = true
+		}
+		//Print stats
 	}
 }

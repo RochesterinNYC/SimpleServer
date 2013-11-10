@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -50,6 +51,35 @@ public class TCPSender {
 		}
 	}
 	public void send(){
+		int packetsAcknowledged = 0;
+		boolean packetReceived;
+		boolean firstTimePacket;
+		byte buffer[];
+		DatagramPacket packet;
+		int numPacketsSent;
+		long numBytesSent;
+		int numPacketsResent;
 		
+		while(packetsAcknowledged != numPackets){
+			packetReceived = false;
+			firstTimePacket = true;
+			//prepPacket(); - Prepare the next packet
+			while(!packetReceived){
+				//sendPacket
+				//numPacketsSent++
+				//numBytesSent increase
+				//if !firstTimePacket
+				  //numPacketsResent++
+				//getACK
+				//if ACK received within timeout && packet wasn't corrupted
+				  //packetRecieved = true
+				  //packetsAcknowledged++
+				//firstTimePacket = false
+			}
+		}
+		//send FIN
+		//numPacketsSent++
+		//numBytesSent increase
+		//Print Stats
 	}
 }
