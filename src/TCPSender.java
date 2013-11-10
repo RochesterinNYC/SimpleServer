@@ -1,3 +1,6 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -14,6 +17,13 @@ public class TCPSender {
 	private DatagramSocket ackSocket;
 	private DatagramSocket sendSocket;
 	
+	private final int SEGSIZE = 576;
+	private final int HEADSIZE = 20;
+	
+	private File queryFile;
+	private FileInputStream fileReader;
+	private int numPackets;
+	
 	public TCPSender(String fileName, InetAddress remoteIP, int remotePort, int ackPort, int windowSize, String logFileName){
 		this.fileName = fileName;
 		this.remoteIP = remoteIP;
@@ -27,9 +37,18 @@ public class TCPSender {
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
-		
+		processFile();
 	}
-	
+	private void processFile(){
+		try {
+			queryFile = new File(fileName);
+			fileReader = new FileInputStream(queryFile);
+			numPackets = (int) Math.ceil(queryFile.length() / (double)(SEGSIZE - HEADSIZE));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	public void send(){
 		
 	}
