@@ -113,12 +113,13 @@ public class TCPSender {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-			
-		
-		//numPacketsSent++
-		//numBytesSent increase
-		//Print Stats
 		packetSocket.close();
+		
+		//Print stats
+		System.out.println("Delivery completed successfully.");
+		System.out.println("Total bytes sent = " + numBytesSent);
+		System.out.println("Segments sent = " + numPacketsSent);
+		System.out.println("Segments retransmitted = " + numPacketsResent);
 	}
 
 	private Packet[] prepPackets(){

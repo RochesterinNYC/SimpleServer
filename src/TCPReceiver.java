@@ -86,8 +86,8 @@ public class TCPReceiver {
 			e.printStackTrace();
 		}	
 		compileFile(fileParts);
-		//Print stats
 		packetSocket.close();
+		System.out.println("Delivery completed successfully");
 	}
 	private void compileFile(ArrayList<byte[]> filePortions){
 		int fileLength = 0;
