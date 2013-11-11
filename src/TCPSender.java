@@ -1,7 +1,10 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -29,6 +32,8 @@ public class TCPSender {
 	private FileInputStream fileReader;
 	private int numPackets;
 	
+	private PrintWriter logger;
+	
 	public TCPSender(String fileName, InetAddress remoteIP, int remotePort, int ackPort, int windowSize, String logFileName){
 		this.fileName = fileName;
 		this.remoteIP = remoteIP;
@@ -39,10 +44,10 @@ public class TCPSender {
 		this.responseBuffer = new byte[20];
 		this.responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length);
 		try {
-			this.packetSocket = new DatagramSocket(this.ackPort);
+			this.packetSocket = new DatagramSocket(this.ackPort);			
 		} catch (SocketException e) {
 			e.printStackTrace();
-		}
+		} 
 		processFile();
 	}
 	private void processFile(){
@@ -69,6 +74,7 @@ public class TCPSender {
 		int currentSequenceNumber = 1;
 		
 		try{
+			this.logger = new PrintWriter(new BufferedWriter(new FileWriter(this.logFileName, true)));
 			while(packetsAcknowledged != numPackets){//While file data packets have not all been acknowledged
 				packetReceived = false;
 				firstTimePacket = true;					
@@ -78,6 +84,7 @@ public class TCPSender {
 					packetBuffer = packetSet[packetsAcknowledged].getPacketLoad();
 					packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 					packetSocket.send(packet);
+					logPacket(packet, true);
 					if(firstTimePacket){
 						currentSequenceNumber += (packet.getLength() - HEADSIZE);
 					}
@@ -91,7 +98,7 @@ public class TCPSender {
 					
 					//wait for ACK or CORR response
 					packetSocket.receive(responsePacket);
-					
+					logPacket(responsePacket, false);
 					//if ACK is for correct sequence number && received within timeout && packet wasn't corrupted && response packet wasn't corrupted itself
 					if(Packet.getACKNumber(responsePacket.getData()) == currentSequenceNumber && Packet.getPurpose(responsePacket.getData()[12]) == "ACK" && !Packet.isCorrupt(responsePacket.getData())){
 					  packetReceived = true;
@@ -105,6 +112,8 @@ public class TCPSender {
 			packetBuffer = finPacket.getPacketLoad();
 			packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 			packetSocket.send(packet);
+			logPacket(packet, true);
+			logger.close();
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -113,13 +122,14 @@ public class TCPSender {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 		packetSocket.close();
 		
 		//Print stats
-		System.out.println("Delivery completed successfully.");
-		System.out.println("Total bytes sent = " + numBytesSent);
-		System.out.println("Segments sent = " + numPacketsSent);
-		System.out.println("Segments retransmitted = " + numPacketsResent);
+		System.out.println("    Delivery completed successfully");
+		System.out.println("    Total bytes sent = " + numBytesSent);
+		System.out.println("    Segments sent = " + numPacketsSent);
+		System.out.println("    Segments retransmitted = " + numPacketsResent);
 	}
 
 	private Packet[] prepPackets(){
@@ -141,5 +151,34 @@ public class TCPSender {
 			//Fill
 		}
 		return packetSet;
+	}
+	//timestamp, source, destination, Sequence #, ACK #, and the flags
+	private void logPacket(DatagramPacket packet, boolean sendingOut){
+		InetAddress sourceIP;
+		int sourcePort;
+		InetAddress destinationIP;
+		int destinationPort;
+		
+		if(sendingOut){//packet sent out
+			sourceIP = packetSocket.getLocalAddress();
+			sourcePort = packetSocket.getLocalPort();
+			destinationIP = packet.getAddress();
+			destinationPort = packet.getPort();
+		}
+		else{//packet received
+			sourceIP = packet.getAddress();
+			sourcePort = packet.getPort();
+			destinationIP = packetSocket.getLocalAddress();
+			destinationPort = packetSocket.getLocalPort();
+		}	
+		
+		String source = sourceIP.toString() + " : " + sourcePort;
+		String destination = destinationIP.toString() + " : " + destinationPort; 
+		int sequenceNumber = Packet.getSequenceNumber(packet.getData());
+		int ackNumber = Packet.getACKNumber(packet.getData());
+		String flag = Packet.getPurpose(packet.getData()[12]);
+		
+		logger.println("[ " + System.currentTimeMillis() + " ], " + source + " , " + destination + " , " + sequenceNumber + " , " + ackNumber + " , " + flag);
+		logger.flush();
 	}
 }

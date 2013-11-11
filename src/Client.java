@@ -395,11 +395,12 @@ public class Client {
     	boolean receiverCommandValid = false;
 		String[] arguments;
     	do{
-    		System.out.println("Please enter in the proper command for initiating " +
+    		System.out.println("    Please enter in the proper command for initiating " +
     						   "the file transfer through tcp simulation. The format is as follows:");
-    		System.out.println("receiver [file name] [listening port] [remote IP] [remote port] [log file name]");
+    		System.out.println("    receiver [file name] [listening port] [remote IP] [remote port] [log file name]");
     		System.out.println("Example:"); 
-    		System.out.println("receiver file.txt 20000 128.59.15.37 20001 logfile.txt ");
+    		System.out.println("    receiver file.txt 20000 128.59.15.37 20001 logfile.txt ");
+    		System.out.print("    - ");
     		String senderCommand = localInput.nextLine();
 			arguments = senderCommand.split(" ");
 			if (arguments.length == 6){

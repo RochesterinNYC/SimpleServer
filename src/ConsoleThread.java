@@ -56,10 +56,10 @@ public class ConsoleThread extends Thread{
 		System.out.print("> ");
 		currentCommand = consoleScanner.nextLine();
 		if(!properCommand(currentCommand.trim())){
-			System.out.println("Not a recognized command.");
+			System.out.println("    Not a recognized command.");
 		}
 		else if(!completeCommand(currentCommand.trim())){
-			System.out.println("That command cannot be completed at this time.");
+			System.out.println("    That command cannot be completed at this time.");
 		}
 		prompt();
 	}
@@ -143,6 +143,7 @@ public class ConsoleThread extends Thread{
 		}
 		catch (Exception e){
 			commandComplete = false;
+			e.printStackTrace();
 		}
 		return commandComplete;
 	}
@@ -346,12 +347,13 @@ public class ConsoleThread extends Thread{
 		boolean senderCommandValid = false;
 		String[] arguments;
 		do {
-			System.out.println("Please enter in the proper command for initiating " +
+			System.out.println("    Please enter in the proper command for initiating " +
 				               "the file transfer through tcp simulation. The format is as follows:");
-			System.out.println("sender [file name] [remote IP] [remote port] " +
+			System.out.println("      sender [file name] [remote IP] [remote port] " +
 							   "[ack port number] [window size] [log file name]");
-			System.out.println("Example:");
-			System.out.println("sender file.txt 128.59.15.38 20000 20001 1152 logfile.txt");
+			System.out.println("    Example:");
+			System.out.println("      sender file.txt 128.59.15.38 20000 20001 1152 logfile.txt");
+			System.out.print("    - ");
 			String senderCommand = consoleScanner.nextLine();
 			arguments = senderCommand.split(" ");
 			if (arguments.length == 7){
