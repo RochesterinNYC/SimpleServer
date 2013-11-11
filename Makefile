@@ -12,10 +12,14 @@ CLASSES = \
 	ClientStart.java \
 	ClientThread.java \
 	ConsoleThread.java \
+	Message.java \
+	Packet.java \
 	Server.java \
 	ServerStart.java \
 	ServerThread.java \
 	ServerThreadType.java \
+	TCPReceiver.java \
+	TCPSender.java \
 	Unblocker.java \
 
 default: classes
