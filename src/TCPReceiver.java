@@ -18,8 +18,6 @@ public class TCPReceiver {
 	private int remotePort; //server port to receive 
 	private String logFileName;
 	private DatagramSocket packetSocket;
-	private final int HEADERSIZE = 20;
-	private final int CHECKSUMSIZE = 5;
 	
 	private DatagramPacket bufferPacket;
 	private byte[] buffer;
@@ -39,51 +37,37 @@ public class TCPReceiver {
 			e.printStackTrace();
 		}
 	}
-	private boolean corruptCheck(byte[] packetData) throws NoSuchAlgorithmException{
-		boolean packetCorrupt;
-		byte[] calculatedCheckSum = new byte[CHECKSUMSIZE];
-		byte[] actualCheckSum = new byte[CHECKSUMSIZE];
-		byte[] entireCalcCheckSum;
-		byte[] queryArray;
-		
-		//Generate byte array of all headers other than checksum and data
-		queryArray = new byte[(HEADERSIZE -  CHECKSUMSIZE) + getDataLength(packetData)];
-		for(int i = 0; i < (HEADERSIZE -  CHECKSUMSIZE); i++){
-			queryArray[i] = packetData[i];
-		}
-		for(int i = (HEADERSIZE -  CHECKSUMSIZE); i < queryArray.length; i++){
-			queryArray[i] = packetData[i + (CHECKSUMSIZE)];
-		}
-		
-		//Calculate check sum of what's been received
-		entireCalcCheckSum = Packet.generateCheckSum(queryArray);
-		
-		//Collect actual check sum and calculated check sum (first 5 bytes)
-		for(int i = (HEADERSIZE -  CHECKSUMSIZE); i < HEADERSIZE; i++){
-			actualCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)] = packetData[i];
-			calculatedCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)] = entireCalcCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)];
-		}
-		packetCorrupt = !Packet.compareCheckSums(calculatedCheckSum, actualCheckSum);
-		return packetCorrupt;
-	}
 
 	public void receive(){
 		boolean tcpComplete = false;
 		ArrayList<byte[]> fileParts = new ArrayList<byte[]>();
+		byte responseBuffer[];
+		DatagramPacket responsePacket;
+		Packet responsePacketData;
+		
 		try {	
 			while(!tcpComplete){	
 				packetSocket.receive(bufferPacket);
 				if (Packet.getPurpose(bufferPacket.getData()[12]) == "FIN"){
 					tcpComplete = true;
 				}
-				else if (corruptCheck(bufferPacket.getData())){//is corrupt data packet
-					//send corrupt ACK
-					
+				//else if wrong packet sequence number
+				else if (Packet.isCorrupt(bufferPacket.getData())){//is corrupt data packet
+					//send CORR response
+					responsePacketData = new Packet(listenPort, remotePort, 0, 0, "CORR", null);
+					responseBuffer = responsePacketData.getPacketLoad();
+					responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length, remoteIP, remotePort);
+					packetSocket.send(responsePacket);
 				}
 				else{//Packet is not corrupt and is correct one
 					fileParts.add(bufferPacket.getData());
 					
-					//send regular ACK
+					//send ACK response 
+					//replace first 0 with sequence number
+					responsePacketData = new Packet(listenPort, remotePort, 0, 0, "ACK", null);
+					responseBuffer = responsePacketData.getPacketLoad();
+					responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length, remoteIP, remotePort);
+					packetSocket.send(responsePacket);
 				}				
 				//flush buffer and packet
 				this.buffer = new byte[576];
@@ -102,12 +86,12 @@ public class TCPReceiver {
 	private void compileFile(ArrayList<byte[]> filePortions){
 		int fileLength = 0;
 		for(byte[] buff : filePortions){
-			fileLength += (getDataLength(buff));
+			fileLength += (Packet.getDataLength(buff));
 		}
 		completeFileBuffer = new byte[fileLength];
 		int fileFilled = 0;
 		for(byte[] buff : filePortions){
-            for(int i = HEADERSIZE; i < getDataLength(buff) + HEADERSIZE; i++){
+            for(int i = 20; i < Packet.getDataLength(buff) + 20; i++){
 				completeFileBuffer[fileFilled] = buff[i];
 				fileFilled++;
 			}
@@ -127,9 +111,5 @@ public class TCPReceiver {
 			e.printStackTrace();
 		}
 	}
-	private int getDataLength(byte[] packetLoad){
-	    int val = 0x00000000;
-	    val |= ((0x000000FF & packetLoad[13]) << 8) | (0x000000FF & packetLoad[14]);
-	    return val;
-	}
+	
 }

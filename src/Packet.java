@@ -31,7 +31,7 @@ public class Packet {
 	private byte[] packetLoad;
 	private int dataLength;
 	
-	private final int HEADERSIZE = 20;
+	private final static int HEADERSIZE = 20;
 	private final static int CHECKSUMSIZE = 5;
 	
 	private byte[] checkSum;
@@ -147,6 +147,34 @@ public class Packet {
 		}		
 	}
 	
+	public static boolean isCorrupt(byte[] packetData) throws NoSuchAlgorithmException{
+		boolean packetCorrupt;
+		byte[] calculatedCheckSum = new byte[CHECKSUMSIZE];
+		byte[] actualCheckSum = new byte[CHECKSUMSIZE];
+		byte[] entireCalcCheckSum;
+		byte[] queryArray;
+		
+		//Generate byte array of all headers other than checksum and data
+		queryArray = new byte[(HEADERSIZE -  CHECKSUMSIZE) + getDataLength(packetData)];
+		for(int i = 0; i < (HEADERSIZE -  CHECKSUMSIZE); i++){
+			queryArray[i] = packetData[i];
+		}
+		for(int i = (HEADERSIZE -  CHECKSUMSIZE); i < queryArray.length; i++){
+			queryArray[i] = packetData[i + (CHECKSUMSIZE)];
+		}
+		
+		//Calculate check sum of what's been received
+		entireCalcCheckSum = generateCheckSum(queryArray);
+		
+		//Collect actual check sum and calculated check sum (first 5 bytes)
+		for(int i = (HEADERSIZE -  CHECKSUMSIZE); i < HEADERSIZE; i++){
+			actualCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)] = packetData[i];
+			calculatedCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)] = entireCalcCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)];
+		}
+		packetCorrupt = !compareCheckSums(calculatedCheckSum, actualCheckSum);
+		return packetCorrupt;
+	}
+	
 	public static byte[] generateCheckSum(byte[] byteArray) throws NoSuchAlgorithmException{
 		return MessageDigest.getInstance("MD5").digest(byteArray);
 	}
@@ -159,6 +187,12 @@ public class Packet {
 			}
 		}
 		return checkSumsMatch;
+	}
+	
+	public static int getDataLength(byte[] packetLoad){
+	    int val = 0x00000000;
+	    val |= ((0x000000FF & packetLoad[13]) << 8) | (0x000000FF & packetLoad[14]);
+	    return val;
 	}
 	
 	//Only taking first 5 bytes of checksum

@@ -6,6 +6,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.security.NoSuchAlgorithmException;
 
 
 public class TCPSender {
@@ -17,6 +18,10 @@ public class TCPSender {
 	private String logFileName;
 	private DatagramSocket packetSocket;
 	
+	//for ACK handling
+	private DatagramPacket responsePacket;
+	private byte[] responseBuffer;
+		
 	private final int SEGSIZE = 576;
 	private final int HEADSIZE = 20;
 	
@@ -31,6 +36,8 @@ public class TCPSender {
 		this.ackPort = ackPort;
 		this.windowSize = windowSize;
 		this.logFileName = logFileName;
+		this.responseBuffer = new byte[20];
+		this.responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length);
 		try {
 			this.packetSocket = new DatagramSocket(this.ackPort);
 		} catch (SocketException e) {
@@ -54,37 +61,40 @@ public class TCPSender {
 		boolean firstTimePacket;
 		byte packetBuffer[];
 		DatagramPacket packet;
-		int numPacketsSent;
-		long numBytesSent;
-		int numPacketsResent;
+		int numPacketsSent = 0;
+		long numBytesSent = 0;
+		int numPacketsResent = 0;
 		Packet packetSet[] = new Packet[numPackets];
 		packetSet = prepPackets();
 		
 		try{
 			while(packetsAcknowledged != numPackets){//While file data packets have not all been acknowledged
 				packetReceived = false;
-				firstTimePacket = true;
+				firstTimePacket = true;					
 				
-					
-				
-				//while(!packetReceived){ //While packet in current window has not been acknowledged
-					//sendPacket(packetSet[packetsAcknowledged])
+				while(!packetReceived){ //While packet in current window has not been acknowledged
+					//send data packet
 					packetBuffer = packetSet[packetsAcknowledged].getPacketLoad();
 					packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 					packetSocket.send(packet);
-					//numPacketsSent++
-					//numBytesSent increase
-					//if !firstTimePacket
-					  //numPacketsResent++
-					//getACK
-					//if ACK received within timeout && packet wasn't corrupted
-					  //packetRecieved = true
+					
+					//log stats
+					numPacketsSent++;
+					numBytesSent += packetSet[packetsAcknowledged].getPacketLoad().length;
+					if(!firstTimePacket){
+						numPacketsResent++;
+					}
+					
+					//wait for ACK or CORR response
+					packetSocket.receive(responsePacket);
+					
+					//if ACK received within timeout && packet wasn't corrupted && response packet wasn't corrupted itself
+					if(Packet.getPurpose(responsePacket.getData()[12]) == "ACK" && !Packet.isCorrupt(responsePacket.getData())){
+					  packetReceived = true;
 					  packetsAcknowledged++;
-					 
-					Thread.sleep(3000); 
-					  
-					//firstTimePacket = false
-				//}
+					}
+					firstTimePacket = false;
+				}
 			}
 			//send FIN
 			Packet finPacket = new Packet(ackPort, remotePort, 0, 0, "FIN", null);
@@ -92,11 +102,11 @@ public class TCPSender {
 			packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 			packetSocket.send(packet);
 		}
-		catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+		catch (IOException e) {
 			e.printStackTrace();
 		}
-		catch (IOException e) {
+		catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 			
