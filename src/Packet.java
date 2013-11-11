@@ -30,6 +30,9 @@ public class Packet {
 	private byte[] data;
 	private byte[] packetLoad;
 	
+	private final int HEADERSIZE = 20;
+	private final static int CHECKSUMSIZE = 5;
+	
 	private byte[] checkSum;
 	
 	public Packet(int sourcePortNumber, int destPortNumber, int sequenceNumber, 
@@ -58,10 +61,10 @@ public class Packet {
 		//if no data, then no data (packet does not have to be 576 bytes)
 		int packetLength = 0;
 		if(data != null){
-			packetLength = 20 + data.length;
+			packetLength = HEADERSIZE + data.length;
 		}
 		else{
-		    packetLength = 20;
+		    packetLength = HEADERSIZE;
 		}
 		packetLoad = new byte[packetLength];
 		packetLoad[0] = (byte) (sourcePortNumber / 256);
@@ -81,8 +84,8 @@ public class Packet {
 		packetLoad[13] = (byte) (data.length / 256);
 		packetLoad[14] = (byte) (data.length % 256);
 		if(data != null){
-			for(int i = 20; i < 20 + data.length; i++){
-				packetLoad[i] = data[i - 20];
+			for(int i = HEADERSIZE; i < HEADERSIZE + data.length; i++){
+				packetLoad[i] = data[i - HEADERSIZE];
 			}
 		}
 	}
@@ -106,25 +109,39 @@ public class Packet {
 	
 	private void calculateCheckSum(){
 		//Create byte array of everything without checksum
-		byte[] checkArray = new byte[15 + data.length];
-		for(int i = 0; i < 15; i++){
+		byte[] checkArray = new byte[(HEADERSIZE - CHECKSUMSIZE) + data.length];
+		for(int i = 0; i < (HEADERSIZE - CHECKSUMSIZE); i++){
 			checkArray[i] = packetLoad[i];
 		}
-		for(int i = 15; i < 15 + data.length; i++){
-			checkArray[i] = data[i - 15];
+		for(int i = HEADERSIZE - CHECKSUMSIZE; i < (HEADERSIZE - CHECKSUMSIZE) + data.length; i++){
+			checkArray[i] = data[i - (HEADERSIZE - CHECKSUMSIZE)];
 		}
 		try {
-			checkSum = MessageDigest.getInstance("MD5").digest(checkArray);
+			checkSum = generateCheckSum(checkArray);
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}		
 	}
 	
+	public static byte[] generateCheckSum(byte[] byteArray) throws NoSuchAlgorithmException{
+		return MessageDigest.getInstance("MD5").digest(byteArray);
+	}
+	
+	public static boolean compareCheckSums(byte[] checkSum1, byte[] checkSum2){
+		boolean checkSumsMatch = true;
+		for(int i = 0; i < CHECKSUMSIZE; i++){
+			if(checkSum1[i] != checkSum2[i]){
+				checkSumsMatch = false;
+			}
+		}
+		return checkSumsMatch;
+	}
+	
 	//Only taking first 5 bytes of checksum
 	private void finalizePacket(){
 		//Add checkSum to packet
-		for(int i = 15; i < 20; i++){
-			packetLoad[i] = checkSum[i - 15];
+		for(int i = HEADERSIZE - CHECKSUMSIZE; i < HEADERSIZE; i++){
+			packetLoad[i] = checkSum[i - (HEADERSIZE - CHECKSUMSIZE)];
 		}
 	}
 }

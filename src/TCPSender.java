@@ -63,7 +63,6 @@ public class TCPSender {
 		while(packetsAcknowledged != numPackets){
 			packetReceived = false;
 			firstTimePacket = true;
-
 			
 			//while(!packetReceived){
 				//sendPacket(packetSet[packetsAcknowledged])
