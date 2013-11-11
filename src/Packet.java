@@ -17,7 +17,7 @@ import java.security.NoSuchAlgorithmException;
  * Byte Representation = Meaning
  * 00000000 = DATA
  * 00000001 = ACK
- * 00000010 = ACK - Was corrupt
+ * 00000010 = CORR (Received packet was corrupt)
  * 00000011 = FIN
  */
 
@@ -29,6 +29,7 @@ public class Packet {
 	private String purposeCode;
 	private byte[] data;
 	private byte[] packetLoad;
+	private int dataLength;
 	
 	private final int HEADERSIZE = 20;
 	private final static int CHECKSUMSIZE = 5;
@@ -43,6 +44,12 @@ public class Packet {
 		this.ackNumber = ackNumber;
 		this.purposeCode = purposeCode;
 		this.data = data;
+		if(data != null){
+			this.dataLength = data.length;
+		}
+		else{
+			this.dataLength = 0;
+		}
 		constructPacket();
 		calculateCheckSum();
 		finalizePacket();
@@ -61,7 +68,7 @@ public class Packet {
 		//if no data, then no data (packet does not have to be 576 bytes)
 		int packetLength = 0;
 		if(data != null){
-			packetLength = HEADERSIZE + data.length;
+			packetLength = HEADERSIZE + dataLength;
 		}
 		else{
 		    packetLength = HEADERSIZE;
@@ -81,24 +88,24 @@ public class Packet {
 			packetLoad[ackIndexStart + i] = ackNumberBytes[i];
 		}
 		packetLoad[12] = getPurposeByte(purposeCode);
-		packetLoad[13] = (byte) (data.length / 256);
-		packetLoad[14] = (byte) (data.length % 256);
+		packetLoad[13] = (byte) (dataLength / 256);
+		packetLoad[14] = (byte) (dataLength % 256);
 		if(data != null){
-			for(int i = HEADERSIZE; i < HEADERSIZE + data.length; i++){
+			for(int i = HEADERSIZE; i < HEADERSIZE + dataLength; i++){
 				packetLoad[i] = data[i - HEADERSIZE];
 			}
 		}
 	}
 	
 	private byte getPurposeByte(String purpose){
-		byte purposeByte = Byte.parseByte("00000000", 2);;
+		byte purposeByte = Byte.parseByte("00000000", 2);
 		if(purpose.equals("DATA")){
 			purposeByte = Byte.parseByte("00000000", 2);
 		}
 		else if(purpose.equals("ACK")){
 			purposeByte = Byte.parseByte("00000001", 2);
 		}
-		else if(purpose.equals("CORR")){
+		else if(purpose.equals("COR")){
 			purposeByte = Byte.parseByte("00000010", 2);
 		}
 		else if(purpose.equals("FIN")){
@@ -107,13 +114,30 @@ public class Packet {
 		return purposeByte;
 	}
 	
+	public static String getPurpose(byte purposeByte){
+		String purpose = "";
+		if (purposeByte == Byte.parseByte("00000000", 2)){
+			purpose = "DATA";
+		}
+		else if(purposeByte == Byte.parseByte("00000001", 2)){
+			purpose = "ACK";
+		}
+		else if(purposeByte == Byte.parseByte("00000010", 2)){
+			purpose = "CORR";
+		}
+		else if(purposeByte == Byte.parseByte("00000011", 2)){
+			purpose = "FIN";
+		}
+		return purpose;
+	}
+	
 	private void calculateCheckSum(){
 		//Create byte array of everything without checksum
-		byte[] checkArray = new byte[(HEADERSIZE - CHECKSUMSIZE) + data.length];
+		byte[] checkArray = new byte[(HEADERSIZE - CHECKSUMSIZE) + dataLength];
 		for(int i = 0; i < (HEADERSIZE - CHECKSUMSIZE); i++){
 			checkArray[i] = packetLoad[i];
 		}
-		for(int i = HEADERSIZE - CHECKSUMSIZE; i < (HEADERSIZE - CHECKSUMSIZE) + data.length; i++){
+		for(int i = HEADERSIZE - CHECKSUMSIZE; i < (HEADERSIZE - CHECKSUMSIZE) + dataLength; i++){
 			checkArray[i] = data[i - (HEADERSIZE - CHECKSUMSIZE)];
 		}
 		try {

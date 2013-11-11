@@ -40,34 +40,29 @@ public class TCPReceiver {
 	public void receive(){
 		boolean tcpComplete = false;
 		ArrayList<byte[]> fileParts = new ArrayList<byte[]>();
-		//while(!tcpComplete){
+		while(!tcpComplete){
 			try {
 				packetSocket.receive(bufferPacket);
-				fileParts.add(bufferPacket.getData());
-				this.buffer = new byte[576];
-				this.bufferPacket = new DatagramPacket(buffer, buffer.length);
-				packetSocket.receive(bufferPacket);
-				fileParts.add(bufferPacket.getData());
-				this.buffer = new byte[576];
-				this.bufferPacket = new DatagramPacket(buffer, buffer.length);
-				packetSocket.receive(bufferPacket);
-				fileParts.add(bufferPacket.getData());
+				if (Packet.getPurpose(bufferPacket.getData()[12]) == "FIN"){
+					tcpComplete = true;
+				}
+				else{//Packet is not corrupt and is correct one
+					fileParts.add(bufferPacket.getData());
+					//flush buffer and packet
+					this.buffer = new byte[576];
+					this.bufferPacket = new DatagramPacket(buffer, buffer.length);
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
-			}		
-			tcpComplete = true;
-			
-			//receive a packet
+			}
 			//if packet is corrupt
 			  //send corrupt ACK
 		    //if packet is fine
 			  //send regular ACK
-			//if packet is FIN
-			  //tcpComplete = true
-		//}
-			//Compile File
+		}
 		compileFile(fileParts);
 		//Print stats
+		packetSocket.close();
 	}
 	private void compileFile(ArrayList<byte[]> filePortions){
 		int fileLength = 0;

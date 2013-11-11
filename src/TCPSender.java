@@ -60,41 +60,51 @@ public class TCPSender {
 		Packet packetSet[] = new Packet[numPackets];
 		packetSet = prepPackets();
 		
-		while(packetsAcknowledged != numPackets){
-			packetReceived = false;
-			firstTimePacket = true;
-			
-			//while(!packetReceived){
-				//sendPacket(packetSet[packetsAcknowledged])
-				try {
+		try{
+			while(packetsAcknowledged != numPackets){//While file data packets have not all been acknowledged
+				packetReceived = false;
+				firstTimePacket = true;
+				
+					
+				
+				//while(!packetReceived){ //While packet in current window has not been acknowledged
+					//sendPacket(packetSet[packetsAcknowledged])
 					packetBuffer = packetSet[packetsAcknowledged].getPacketLoad();
 					packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 					packetSocket.send(packet);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				//numPacketsSent++
-				//numBytesSent increase
-				//if !firstTimePacket
-				  //numPacketsResent++
-				//getACK
-				//if ACK received within timeout && packet wasn't corrupted
-				  //packetRecieved = true
-				  packetsAcknowledged++;
-				  try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				  
-				//firstTimePacket = false
-			//}
+					//numPacketsSent++
+					//numBytesSent increase
+					//if !firstTimePacket
+					  //numPacketsResent++
+					//getACK
+					//if ACK received within timeout && packet wasn't corrupted
+					  //packetRecieved = true
+					  packetsAcknowledged++;
+					 
+					Thread.sleep(3000); 
+					  
+					//firstTimePacket = false
+				//}
+			}
+			//send FIN
+			Packet finPacket = new Packet(ackPort, remotePort, 0, 0, "FIN", null);
+			packetBuffer = finPacket.getPacketLoad();
+			packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
+			packetSocket.send(packet);
 		}
-		//send FIN
+		catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+			
+		
 		//numPacketsSent++
 		//numBytesSent increase
 		//Print Stats
+		packetSocket.close();
 	}
 
 	private Packet[] prepPackets(){
