@@ -63,16 +63,17 @@ public class TCPSender {
 		while(packetsAcknowledged != numPackets){
 			packetReceived = false;
 			firstTimePacket = true;
-			packetBuffer = packetSet[0].getPacketLoad();
-			packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
-			try {
-				packetSocket.send(packet);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			break;
+
+			
 			//while(!packetReceived){
 				//sendPacket(packetSet[packetsAcknowledged])
+				try {
+					packetBuffer = packetSet[packetsAcknowledged].getPacketLoad();
+					packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
+					packetSocket.send(packet);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 				//numPacketsSent++
 				//numBytesSent increase
 				//if !firstTimePacket
@@ -80,7 +81,14 @@ public class TCPSender {
 				//getACK
 				//if ACK received within timeout && packet wasn't corrupted
 				  //packetRecieved = true
-				  //packetsAcknowledged++
+				  packetsAcknowledged++;
+				  try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				  
 				//firstTimePacket = false
 			//}
 		}
@@ -98,7 +106,8 @@ public class TCPSender {
 			for (int i = 0; i < numPackets; i++){
 				if(i == numPackets - 1){//last one
 					dataBuffer = new byte[fileReader.available()];
-				}	
+				
+				}
 				fileReader.read(dataBuffer);
 				packetSet[i] = new Packet(ackPort, remotePort, fileSequenceNumber, 0, "DATA", dataBuffer);
 				fileSequenceNumber += (SEGSIZE - HEADSIZE);

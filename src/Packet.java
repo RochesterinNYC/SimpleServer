@@ -9,8 +9,9 @@ import java.security.NoSuchAlgorithmException;
  * 2-3 = destPortNumber
  * 4-7 = sequenceNumber
  * 8-11 = ACK #
- * 12 = purpose code 
- * 13-19 = TCP CheckSum
+ * 12 = purpose code
+ * 13-14 = data length (in bytes) 
+ * 15-19 = TCP CheckSum
  * (if data) 20-575 = data
  * Purpose Code:
  * Byte Representation = Meaning
@@ -55,7 +56,13 @@ public class Packet {
 	private void constructPacket(){
 		//Make packet to full just without checksum
 		//if no data, then no data (packet does not have to be 576 bytes)
-		int packetLength = 20 + data.length;
+		int packetLength = 0;
+		if(data != null){
+			packetLength = 20 + data.length;
+		}
+		else{
+		    packetLength = 20;
+		}
 		packetLoad = new byte[packetLength];
 		packetLoad[0] = (byte) (sourcePortNumber / 256);
 		packetLoad[1] = (byte) (sourcePortNumber % 256);
@@ -71,6 +78,8 @@ public class Packet {
 			packetLoad[ackIndexStart + i] = ackNumberBytes[i];
 		}
 		packetLoad[12] = getPurposeByte(purposeCode);
+		packetLoad[13] = (byte) (data.length / 256);
+		packetLoad[14] = (byte) (data.length % 256);
 		if(data != null){
 			for(int i = 20; i < 20 + data.length; i++){
 				packetLoad[i] = data[i - 20];
@@ -97,12 +106,12 @@ public class Packet {
 	
 	private void calculateCheckSum(){
 		//Create byte array of everything without checksum
-		byte[] checkArray = new byte[13 + data.length];
-		for(int i = 0; i < 13; i++){
+		byte[] checkArray = new byte[15 + data.length];
+		for(int i = 0; i < 15; i++){
 			checkArray[i] = packetLoad[i];
 		}
-		for(int i = 13; i < 13 + data.length; i++){
-			checkArray[i] = data[i - 13];
+		for(int i = 15; i < 15 + data.length; i++){
+			checkArray[i] = data[i - 15];
 		}
 		try {
 			checkSum = MessageDigest.getInstance("MD5").digest(checkArray);
@@ -111,11 +120,11 @@ public class Packet {
 		}		
 	}
 	
-	//Only taking first 7 bytes of checksum
+	//Only taking first 5 bytes of checksum
 	private void finalizePacket(){
 		//Add checkSum to packet
-		for(int i = 13; i < 20; i++){
-			packetLoad[i] = checkSum[i - 13];
+		for(int i = 15; i < 20; i++){
+			packetLoad[i] = checkSum[i - 15];
 		}
 	}
 }
