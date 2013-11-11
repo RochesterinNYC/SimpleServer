@@ -1,5 +1,6 @@
 import java.nio.ByteBuffer;
-
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Packet payload - Byte Array Structure:
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
  * 8-11 = ACK #
  * 12 = purpose code 
  * 13-19 = TCP CheckSum
- * 
+ * (if data) 20-575 = data
  * Purpose Code:
  * Byte Representation = Meaning
  * 00000000 = DATA
@@ -28,15 +29,14 @@ public class Packet {
 	private byte[] data;
 	private byte[] packetLoad;
 	
-	private long checkSum;
+	private byte[] checkSum;
 	
 	public Packet(int sourcePortNumber, int destPortNumber, int sequenceNumber, 
-				  int ackNumber, long checkSum, String purposeCode, byte[] data){
+				  int ackNumber, String purposeCode, byte[] data){
 		this.sourcePortNumber = sourcePortNumber;
 		this.destPortNumber = destPortNumber;
 		this.sequenceNumber = sequenceNumber;
 		this.ackNumber = ackNumber;
-		this.checkSum = checkSum;
 		this.purposeCode = purposeCode;
 		this.data = data;
 		constructPacket();
@@ -48,7 +48,7 @@ public class Packet {
 		return packetLoad;
 	}
 	
-	public long getCheckSum(){
+	public byte[] getCheckSum(){
 		return checkSum;
 	}
 	
@@ -70,17 +70,52 @@ public class Packet {
 			packetLoad[seqIndexStart + i] = sequenceNumberBytes[i];
 			packetLoad[ackIndexStart + i] = ackNumberBytes[i];
 		}
-		packetLoad[12] = Byte.parseByte("00000000", 2);
+		packetLoad[12] = getPurposeByte(purposeCode);
+		if(data != null){
+			for(int i = 20; i < 20 + data.length; i++){
+				packetLoad[i] = data[i - 20];
+			}
+		}
+	}
 	
+	private byte getPurposeByte(String purpose){
+		byte purposeByte = Byte.parseByte("00000000", 2);;
+		if(purpose.equals("DATA")){
+			purposeByte = Byte.parseByte("00000000", 2);
+		}
+		else if(purpose.equals("ACK")){
+			purposeByte = Byte.parseByte("00000001", 2);
+		}
+		else if(purpose.equals("CORR")){
+			purposeByte = Byte.parseByte("00000010", 2);
+		}
+		else if(purpose.equals("FIN")){
+			purposeByte = Byte.parseByte("00000011", 2);
+		} 
+		return purposeByte;
 	}
 	
 	private void calculateCheckSum(){
 		//Create byte array of everything without checksum
-		//MD5 stuff on this new array
-		//Set checkSum = stuff
+		byte[] checkArray = new byte[13 + data.length];
+		for(int i = 0; i < 13; i++){
+			checkArray[i] = packetLoad[i];
+		}
+		for(int i = 13; i < 13 + data.length; i++){
+			checkArray[i] = data[i - 13];
+		}
+		try {
+			checkSum = MessageDigest.getInstance("MD5").digest(checkArray);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}		
 	}
 	
+	//Only taking first 7 bytes of checksum
 	private void finalizePacket(){
 		//Add checkSum to packet
+		for(int i = 13; i < 20; i++){
+			packetLoad[i] = checkSum[i - 13];
+		}
 	}
 }

@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -51,7 +52,7 @@ public class TCPSender {
 		int packetsAcknowledged = 0;
 		boolean packetReceived;
 		boolean firstTimePacket;
-		byte buffer[];
+		byte packetBuffer[];
 		DatagramPacket packet;
 		int numPacketsSent;
 		long numBytesSent;
@@ -62,9 +63,16 @@ public class TCPSender {
 		while(packetsAcknowledged != numPackets){
 			packetReceived = false;
 			firstTimePacket = true;
-			//prepNextPacket();
-			while(!packetReceived){
-				//sendPacket
+			packetBuffer = packetSet[0].getPacketLoad();
+			packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
+			try {
+				packetSocket.send(packet);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			break;
+			//while(!packetReceived){
+				//sendPacket(packetSet[packetsAcknowledged])
 				//numPacketsSent++
 				//numBytesSent increase
 				//if !firstTimePacket
@@ -74,19 +82,31 @@ public class TCPSender {
 				  //packetRecieved = true
 				  //packetsAcknowledged++
 				//firstTimePacket = false
-			}
+			//}
 		}
 		//send FIN
 		//numPacketsSent++
 		//numBytesSent increase
 		//Print Stats
 	}
-	int sourcePortNumber, int destPortNumber, int sequenceNumber, 
-	  int ackNumber, int checkSum, String purposeCode, byte[] data
+
 	private Packet[] prepPackets(){
 		Packet packetSet[] = new Packet[numPackets];
-		for (int i = 0; i < numPackets; i++){
-			new Packet(ackPort, remotePort, i, , , , )
+		byte[] dataBuffer = new byte[556];
+		int fileSequenceNumber = 1; 
+		try{
+			for (int i = 0; i < numPackets; i++){
+				if(i == numPackets - 1){//last one
+					dataBuffer = new byte[fileReader.available()];
+				}	
+				fileReader.read(dataBuffer);
+				packetSet[i] = new Packet(ackPort, remotePort, fileSequenceNumber, 0, "DATA", dataBuffer);
+				fileSequenceNumber += (SEGSIZE - HEADSIZE);
+			}
 		}
+		catch(IOException e){
+			//Fill
+		}
+		return packetSet;
 	}
 }
