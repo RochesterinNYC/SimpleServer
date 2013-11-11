@@ -66,6 +66,7 @@ public class TCPSender {
 		int numPacketsResent = 0;
 		Packet packetSet[] = new Packet[numPackets];
 		packetSet = prepPackets();
+		int currentSequenceNumber = 1;
 		
 		try{
 			while(packetsAcknowledged != numPackets){//While file data packets have not all been acknowledged
@@ -77,6 +78,9 @@ public class TCPSender {
 					packetBuffer = packetSet[packetsAcknowledged].getPacketLoad();
 					packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 					packetSocket.send(packet);
+					if(firstTimePacket){
+						currentSequenceNumber += (packet.getLength() - HEADSIZE);
+					}
 					
 					//log stats
 					numPacketsSent++;
@@ -88,8 +92,8 @@ public class TCPSender {
 					//wait for ACK or CORR response
 					packetSocket.receive(responsePacket);
 					
-					//if ACK received within timeout && packet wasn't corrupted && response packet wasn't corrupted itself
-					if(Packet.getPurpose(responsePacket.getData()[12]) == "ACK" && !Packet.isCorrupt(responsePacket.getData())){
+					//if ACK is for correct sequence number && received within timeout && packet wasn't corrupted && response packet wasn't corrupted itself
+					if(Packet.getACKNumber(responsePacket.getData()) == currentSequenceNumber && Packet.getPurpose(responsePacket.getData()[12]) == "ACK" && !Packet.isCorrupt(responsePacket.getData())){
 					  packetReceived = true;
 					  packetsAcknowledged++;
 					}
@@ -128,7 +132,7 @@ public class TCPSender {
 				
 				}
 				fileReader.read(dataBuffer);
-				packetSet[i] = new Packet(ackPort, remotePort, fileSequenceNumber, 0, "DATA", dataBuffer);
+				packetSet[i] = new Packet(ackPort, remotePort, fileSequenceNumber, fileSequenceNumber + dataBuffer.length, "DATA", dataBuffer);
 				fileSequenceNumber += (SEGSIZE - HEADSIZE);
 			}
 		}

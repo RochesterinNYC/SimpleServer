@@ -44,6 +44,7 @@ public class TCPReceiver {
 		byte responseBuffer[];
 		DatagramPacket responsePacket;
 		Packet responsePacketData;
+		int currentSequenceNumber = 1;
 		
 		try {	
 			while(!tcpComplete){	
@@ -51,7 +52,13 @@ public class TCPReceiver {
 				if (Packet.getPurpose(bufferPacket.getData()[12]) == "FIN"){
 					tcpComplete = true;
 				}
-				//else if wrong packet sequence number
+				else if (Packet.getSequenceNumber(bufferPacket.getData()) != currentSequenceNumber){//wrong packet sequence number
+					//send ACK 
+					responsePacketData = new Packet(listenPort, remotePort, 0, currentSequenceNumber, "ACK", null);
+					responseBuffer = responsePacketData.getPacketLoad();
+					responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length, remoteIP, remotePort);
+					packetSocket.send(responsePacket);
+				}
 				else if (Packet.isCorrupt(bufferPacket.getData())){//is corrupt data packet
 					//send CORR response
 					responsePacketData = new Packet(listenPort, remotePort, 0, 0, "CORR", null);
@@ -61,10 +68,9 @@ public class TCPReceiver {
 				}
 				else{//Packet is not corrupt and is correct one
 					fileParts.add(bufferPacket.getData());
-					
+					currentSequenceNumber = Packet.getACKNumber(bufferPacket.getData());
 					//send ACK response 
-					//replace first 0 with sequence number
-					responsePacketData = new Packet(listenPort, remotePort, 0, 0, "ACK", null);
+					responsePacketData = new Packet(listenPort, remotePort, 0, currentSequenceNumber, "ACK", null);
 					responseBuffer = responsePacketData.getPacketLoad();
 					responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length, remoteIP, remotePort);
 					packetSocket.send(responsePacket);

@@ -195,6 +195,21 @@ public class Packet {
 	    return val;
 	}
 	
+	public static int getSequenceNumber(byte[] packetLoad){
+		return getACKOrSeq(packetLoad, 4);
+	}
+	public static int getACKNumber(byte[] packetLoad){
+		return getACKOrSeq(packetLoad, 8);
+	}
+	
+	private static int getACKOrSeq(byte[] packetLoad, int startIndex){
+		byte[] intBytes = new byte[4];
+		for(int i = startIndex; i < startIndex + 4; i++){
+			intBytes[i - startIndex] = packetLoad[i]; 
+		}
+		return ByteBuffer.wrap(intBytes).getInt();
+	}
+	
 	//Only taking first 5 bytes of checksum
 	private void finalizePacket(){
 		//Add checkSum to packet
