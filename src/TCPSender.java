@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.security.NoSuchAlgorithmException;
 
 
@@ -34,6 +35,22 @@ public class TCPSender {
 	
 	private PrintWriter logger;
 	
+	private long timeOut;
+	private long roundTripTime;
+	
+	private void adjustTimeOut(){
+		this.timeOut = (long) (0.25 * timeOut + 0.75 * roundTripTime);
+		try {
+			packetSocket.setSoTimeout((int) timeOut);
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void markRoundTripTime(){
+		roundTripTime = System.currentTimeMillis() - roundTripTime;
+	}
+	
 	public TCPSender(String fileName, InetAddress remoteIP, int remotePort, int ackPort, int windowSize, String logFileName){
 		this.fileName = fileName;
 		this.remoteIP = remoteIP;
@@ -43,6 +60,8 @@ public class TCPSender {
 		this.logFileName = logFileName;
 		this.responseBuffer = new byte[20];
 		this.responsePacket = new DatagramPacket(responseBuffer, responseBuffer.length);
+		this.timeOut = 5000;
+		this.roundTripTime = 5000;
 		try {
 			this.packetSocket = new DatagramSocket(this.ackPort);			
 		} catch (SocketException e) {
@@ -77,13 +96,14 @@ public class TCPSender {
 			this.logger = new PrintWriter(new BufferedWriter(new FileWriter(this.logFileName, true)));
 			while(packetsAcknowledged != numPackets){//While file data packets have not all been acknowledged
 				packetReceived = false;
-				firstTimePacket = true;					
-				
+				firstTimePacket = true;
+				adjustTimeOut();
 				while(!packetReceived){ //While packet in current window has not been acknowledged
 					//send data packet
 					packetBuffer = packetSet[packetsAcknowledged].getPacketLoad();
 					packet = new DatagramPacket(packetBuffer, packetBuffer.length, remoteIP, remotePort);
 					packetSocket.send(packet);
+					roundTripTime = System.currentTimeMillis();
 					logPacket(packet, true);
 					if(firstTimePacket){
 						currentSequenceNumber += (packet.getLength() - HEADSIZE);
@@ -97,16 +117,23 @@ public class TCPSender {
 					}
 					
 					//wait for ACK or CORR response
-					packetSocket.receive(responsePacket);
-					logPacket(responsePacket, false);
-					//if ACK is for correct sequence number && received within timeout && packet wasn't corrupted && response packet wasn't corrupted itself
-					if(Packet.getACKNumber(responsePacket.getData()) == currentSequenceNumber && Packet.getPurpose(responsePacket.getData()[12]) == "ACK" && !Packet.isCorrupt(responsePacket.getData())){
-					  packetReceived = true;
-					  packetsAcknowledged++;
+					try{
+						packetSocket.receive(responsePacket);
+						markRoundTripTime();
+						logPacket(responsePacket, false);
+						//if ACK is for correct sequence number && received within timeout && packet wasn't corrupted && response packet wasn't corrupted itself
+						if(Packet.getACKNumber(responsePacket.getData()) == currentSequenceNumber && Packet.getPurpose(responsePacket.getData()[12]) == "ACK" && !Packet.isCorrupt(responsePacket.getData())){
+							packetReceived = true;
+						  packetsAcknowledged++;
+						}
+						
 					}
-					firstTimePacket = false;
-				}
-			}
+					catch (SocketTimeoutException e) {
+		                // timeout
+						firstTimePacket = false;
+		            }					
+				}//End of individual packet loop
+			}//End of all packets loop
 			//send FIN
 			Packet finPacket = new Packet(ackPort, remotePort, 0, 0, "FIN", null);
 			packetBuffer = finPacket.getPacketLoad();

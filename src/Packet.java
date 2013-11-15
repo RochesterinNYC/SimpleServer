@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,7 +21,12 @@ import java.security.NoSuchAlgorithmException;
  * 00000010 = CORR (Received packet was corrupt)
  * 00000011 = FIN
  */
-
+/**
+* <b>Packet Class</b>
+* <p>
+* Represents the packet that gets sent through udp (in tcp simulation).
+* @author James Wen - jrw2175
+*/
 public class Packet {
 	private int sourcePortNumber;
 	private int destPortNumber;
@@ -36,6 +42,15 @@ public class Packet {
 	
 	private byte[] checkSum;
 	
+	
+    /**
+    * Packet constructor
+    * <p>
+    * Creates a client and connects to the server.
+    * @param host - the IP address of the server
+    * @param portNumber - the port at the server's IP address to connect to 
+    * @throws IOException
+    */
 	public Packet(int sourcePortNumber, int destPortNumber, int sequenceNumber, 
 				  int ackNumber, String purposeCode, byte[] data){
 		this.sourcePortNumber = sourcePortNumber;
