@@ -1,6 +1,123 @@
 SimpleServer (W4119 : Computer Networks)
 - jrw2175
 
+HW Assignment II:
+
+To Operate:
+Run "make" in the project directory.
+
+To run the Server/Sender, enter:
+java ServerStart [portNumber]
+
+To run the Client/Receiver, enter:
+java ClientStart [IPAddress] [portNumber]
+
+How to Run:
+Client/Receiver-side:
+- Log in to an account (ex. Username: Columbia, Password: 116bway)
+- Enter the "file" user option when prompted with menu.
+- Enter command with arguments as follows: "receiver [file name] [listening port] [remote IP] [remote port] [log file name]"
+- Client/Receiver now waits to receive packets.
+
+Server/Sender-side:
+- Use the server console provided to type in the "file_send" command.
+- Enter comamand with arguments as follows: "sender [file name] [remote IP] [remote port] [ack port number] [window size] [log file name]"
+
+General Command Flow:
+
+Client --> Selects file option
+Interfacing Server Thread --> Waits for TCP transaction to be finished (waits for Client to finish)
+ConsoleThread --> Server Admin types in command to start sending file through "TCP"
+
+Server --> sends UDP packets to specified port and IP of client
+Client --> sends back UDP packets that are ACK or CORR indication messages
+(Server-side = If Client UDP ACK does not make it back or ACK is corrupt or ACK indicates file is corrupt, server resends the UDP data packet) 
+   if server times out without receiving ack
+    resends data packet
+  if server receives a corrupt ACK or ACK-corrupt
+    recents data packet
+  if receives correct ACK
+    moves on
+(Client-side = If Server UDP data does not make it to client or server UDP data, then server waits for ACK and eventually times out and resends UDP data)
+  if client senses it is repeat
+    ignores it and resends its ACK for the previous packet
+  if client senses it is corrupt
+    sends ACK - corrupt
+  if client receives an uncorrupted packet
+    processes it and sends its ACK for that packet
+Repeats until entire file has been sent
+  Server --> sends FIN message to Client and ends method
+  Client --> receives FIN message and option menu and interaction can continue
+
+Client 
+one socket -->  sends ACK datagrams and receives file datagrams from server
+(listening_port)
+
+Server
+one socket --> sends file datagrams and receives ACK datagrams from client 
+(ack_port_number)
+
+- 576 = Segment size
+
+Header Format:
+Source Port Number = 16 bits = 2 bytes
+Destination Port Number = 16 bits = 2 bytes
+Sequence Number = 32 bits = 4 bytes
+ACK # = 32 bits = 4 bytes
+Purpose Code = 8 bits = 1 byte   (ACK, FIN, and DATA)
+Data Length = 16 bits = 2 bytes
+TCP CheckSum = 64 bits = 5 bytes
+
+Payload indices are as follows:
+ * Packet payload - Byte Array Structure:
+ * Index = Contents
+ * 0-1 = sourcePortNumber
+ * 2-3 = destPortNumber
+ * 4-7 = sequenceNumber
+ * 8-11 = ACK #
+ * 12 = purpose code
+ * 13-14 = data length (in bytes) 
+ * 15-19 = TCP CheckSum
+ * (if data) 20-575 = data
+
+ Purpose Code representations are as follows:
+ * Byte Representation = Meaning
+ * 00000000 = DATA
+ * 00000001 = ACK
+ * 00000010 = CORR (Received packet was corrupt)
+ * 00000011 = FIN
+
+
+ACK Assignment:
+if (purposeCode is ACK), then ACK # = sequence number of last packet received
+if (purposeCode is DATA), then ACK# = sequence number of last packet received (packet before this one)
+
+Server Data Message
+Seq # = first byte of data part of this packet
+ACK # = Seq # + 556
+
+Client ACK Message
+Seq # = matches the ACK of the data packet received
+ACK # = Seq # of data packet received + 556
+
+Example:
+Server --> Client = Seq# = 1 ACK = 557
+Server increases sequence number (from 1 --> 557)
+Server is looking for ACK with ACK# 557 now
+Client receives it and checks if message seq # matches its seq number (1)
+Client's seq number changed to received message's ACK (557)
+Client is now looking for message with seq 557
+Client sends back ACK with ACK# = current client seq number
+Client --> Server = ACK Seq # = 0 ACK # = 557
+
+Other Notes:
+- Start the sequence numbers with 1
+- Took number of segments resent to purely mean number of times any segment was retransmitted, not number of segment parts that required some type of retransmitting
+- Repeated simulations allowed due to datagram sockets being closed after successful TCP simulated transfer of file
+
+
+HW Part I:
+
 To Operate:
 Run "make" in the project directory.
 
@@ -62,3 +179,4 @@ Extra Features:
   - Users logged in on an account can send messages from that account to another account (can be to themselves) and read the messages that the account they're logged in as has received.
   - Currently, one line subjects and bodies are implemented.
   - Messages are logged in the server log and server admin has the ability to view all messages on the server.
+
