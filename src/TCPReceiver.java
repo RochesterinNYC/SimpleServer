@@ -11,13 +11,20 @@ import java.net.SocketException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-
+/**
+ * <b>TCPReceiver Class</b>
+ * <p>
+ * Represents the TCP Receiver that is receiving packets from a TCP Sender and
+ * sends back ACKs accordingly.
+ * Simulates it through UDP.
+ * @author James Wen - jrw2175
+*/
 public class TCPReceiver {
 	
 	private String fileName;
 	private int listenPort;
 	private InetAddress remoteIP; //server IP
-	private int remotePort; //server port to receive 
+	private int remotePort; //server port that is sending 
 	private String logFileName;
 	private DatagramSocket packetSocket;
 	
@@ -27,6 +34,18 @@ public class TCPReceiver {
 	
 	private PrintWriter logger;
 	
+	/**
+	 * TCPSender constructor
+	 * <p>
+	 * Creates a TCPSender that will be sending data packets from a specific port
+	 * to a receiver at a remote IP and port.
+	 * resulting packet is constructed accordingly.
+	 * @param fileName - the name of the file to be sent/transmitted
+	 * @param listenPort - the port that this receiver is listening on
+	 * @param remoteIP - the IP address of the sender
+	 * @param remotePort - the port number of the sender
+	 * @param logFileName - the name of the file that ack transmissions and receiving will be logged in
+	*/	
 	public TCPReceiver(String fileName, int listenPort, InetAddress remoteIP, int remotePort, String logFileName){
 		this.fileName = fileName;
 		this.listenPort = listenPort;
@@ -42,6 +61,11 @@ public class TCPReceiver {
 		} 
 	}
 
+    /**
+     * receive
+     * <p>
+     * Receives the file  as packets from the sender and acknowledges them.
+     */
 	public void receive(){
 		boolean tcpComplete = false;
 		ArrayList<byte[]> fileParts = new ArrayList<byte[]>();
@@ -107,6 +131,13 @@ public class TCPReceiver {
 		packetSocket.close();
 		System.out.println("    Delivery completed successfully");
 	}
+	
+    /**
+     * compileFile
+     * <p>
+     * Reconstructs the file from received packets.
+     * @param filePortions - the file packets as byte arrays
+     */
 	private void compileFile(ArrayList<byte[]> filePortions){
 		int fileLength = 0;
 		for(byte[] buff : filePortions){
@@ -136,7 +167,14 @@ public class TCPReceiver {
 		}
 	}
 	
-	//timestamp, source, destination, Sequence #, ACK #, and the flags
+    /**
+     * logPacket
+     * <p>
+     * Logs the sending or receiving of a packet.
+     * Logs: timestamp, source, destination, Sequence #, ACK #, flags
+     * @param packet - the packet to be logged
+     * @param sendingOut - whether the packet was one that was sent out or received
+     */
 	private void logPacket(DatagramPacket packet, boolean sendingOut){
 		InetAddress sourceIP;
 		int sourcePort;

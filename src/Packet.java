@@ -1,9 +1,14 @@
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
+ * <b>Packet Class</b>
+ * <p>
+ * Represents the packet that gets sent through udp (in tcp simulation).
+ * Note that only first 5 bytes of calculated checksums are used and placed in
+ * packet.
+ * @author James Wen - jrw2175
  * Packet payload - Byte Array Structure:
  * Index = Contents
  * 0-1 = sourcePortNumber
@@ -20,12 +25,6 @@ import java.security.NoSuchAlgorithmException;
  * 00000001 = ACK
  * 00000010 = CORR (Received packet was corrupt)
  * 00000011 = FIN
- */
-/**
-* <b>Packet Class</b>
-* <p>
-* Represents the packet that gets sent through udp (in tcp simulation).
-* @author James Wen - jrw2175
 */
 public class Packet {
 	private int sourcePortNumber;
@@ -42,14 +41,17 @@ public class Packet {
 	
 	private byte[] checkSum;
 	
-	
     /**
     * Packet constructor
     * <p>
-    * Creates a client and connects to the server.
-    * @param host - the IP address of the server
-    * @param portNumber - the port at the server's IP address to connect to 
-    * @throws IOException
+    * Creates a packet that has headers and data (optional). If data is null, 
+    * resulting packet is constructed accordingly.
+    * @param sourcePortNumber - the port number packet is being sent from
+    * @param destPortNumber - the port number packet is going to
+    * @param sequenceNumber - the sequence number of the packet (first data byte)
+    * @param ackNumber - the acknowledgement number of the packet
+    * @param purposeCode - what the packet is meant for (acknowledging, data, etc.)
+    * @param data - the data that the packet will carry (can be null)
     */
 	public Packet(int sourcePortNumber, int destPortNumber, int sequenceNumber, 
 				  int ackNumber, String purposeCode, byte[] data){
@@ -65,23 +67,21 @@ public class Packet {
 		else{
 			this.dataLength = 0;
 		}
+		//Actually construct the packet as a byte array
 		constructPacket();
 		calculateCheckSum();
 		finalizePacket();
 	}
 	
-	public byte[] getPacketLoad(){
-		return packetLoad;
-	}
-	
-	public byte[] getCheckSum(){
-		return checkSum;
-	}
-	
+	/**
+     * constructPacket
+     * <p>
+     * Convert the packet into a byte array (without checksum)
+     */
 	private void constructPacket(){
-		//Make packet to full just without checksum
-		//if no data, then no data (packet does not have to be 576 bytes)
 		int packetLength = 0;
+		//Packet length can be just 20 (no data), or anywhere between 20 and 576 
+		//bytes depending on data length
 		if(data != null){
 			packetLength = HEADERSIZE + dataLength;
 		}
@@ -89,11 +89,14 @@ public class Packet {
 		    packetLength = HEADERSIZE;
 		}
 		packetLoad = new byte[packetLength];
+		
+		//Set port numbers
 		packetLoad[0] = (byte) (sourcePortNumber / 256);
 		packetLoad[1] = (byte) (sourcePortNumber % 256);
 		packetLoad[2] = (byte) (destPortNumber / 256);
 		packetLoad[3] = (byte) (destPortNumber % 256);
 		
+		//Set sequence and ack numbers
 		byte[] sequenceNumberBytes = ByteBuffer.allocate(4).putInt(sequenceNumber).array();
 		byte[] ackNumberBytes = ByteBuffer.allocate(4).putInt(ackNumber).array();
 		int seqIndexStart = 4;
@@ -102,9 +105,13 @@ public class Packet {
 			packetLoad[seqIndexStart + i] = sequenceNumberBytes[i];
 			packetLoad[ackIndexStart + i] = ackNumberBytes[i];
 		}
+		
+		//Set purpose code
 		packetLoad[12] = getPurposeByte(purposeCode);
 		packetLoad[13] = (byte) (dataLength / 256);
 		packetLoad[14] = (byte) (dataLength % 256);
+		
+		//Set data (if there is any)
 		if(data != null){
 			for(int i = HEADERSIZE; i < HEADERSIZE + dataLength; i++){
 				packetLoad[i] = data[i - HEADERSIZE];
@@ -112,6 +119,59 @@ public class Packet {
 		}
 	}
 	
+	/**
+     * calculateCheckSum
+     * <p>
+     * Calculates the packet's checksum using MD5 and all the header bytes other 
+     * than the checksum itself and the data bytes
+     */
+	private void calculateCheckSum(){
+		//Create byte array of everything without checksum
+		byte[] checkArray = new byte[(HEADERSIZE - CHECKSUMSIZE) + dataLength];
+		for(int i = 0; i < (HEADERSIZE - CHECKSUMSIZE); i++){
+			checkArray[i] = packetLoad[i];
+		}
+		for(int i = HEADERSIZE - CHECKSUMSIZE; i < (HEADERSIZE - CHECKSUMSIZE) + dataLength; i++){
+			checkArray[i] = data[i - (HEADERSIZE - CHECKSUMSIZE)];
+		}
+		try {
+			checkSum = generateCheckSum(checkArray);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}		
+	}
+	
+	/**
+     * generateCheckSum
+     * <p>
+     * Calculates a byte array's checksum using MD5
+     * @param byteArray - the byte array to calculate checksum for
+     * @return check sum of the byte array (MD5)
+     */
+	public static byte[] generateCheckSum(byte[] byteArray) throws NoSuchAlgorithmException{
+		return MessageDigest.getInstance("MD5").digest(byteArray);
+	}
+	
+	/**
+     * finalizePacket
+     * <p>
+     * Adds the calculated check sum to the packet
+     */
+	//Only taking first 5 bytes of checksum
+	private void finalizePacket(){
+		//Add checkSum to packet
+		for(int i = HEADERSIZE - CHECKSUMSIZE; i < HEADERSIZE; i++){
+			packetLoad[i] = checkSum[i - (HEADERSIZE - CHECKSUMSIZE)];
+		}
+	}
+	
+	/**
+     * getPurposeByte
+     * <p>
+     * Returns a purposeCode as a byte.
+     * @param purpose - purposeCode to be converted into byte
+     * @return purposeByte - purposeCode as byte
+     */
 	private byte getPurposeByte(String purpose){
 		byte purposeByte = Byte.parseByte("00000000", 2);
 		if(purpose.equals("DATA")){
@@ -129,6 +189,13 @@ public class Packet {
 		return purposeByte;
 	}
 	
+	/**
+     * getPurpose
+     * <p>
+     * Returns the purposeByte as the correlated purpose (code).
+     * @param purposeByte - a purposeCode as a byte
+     * @return purpose - the correlated purpose code
+     */
 	public static String getPurpose(byte purposeByte){
 		String purpose = "";
 		if (purposeByte == Byte.parseByte("00000000", 2)){
@@ -146,22 +213,14 @@ public class Packet {
 		return purpose;
 	}
 	
-	private void calculateCheckSum(){
-		//Create byte array of everything without checksum
-		byte[] checkArray = new byte[(HEADERSIZE - CHECKSUMSIZE) + dataLength];
-		for(int i = 0; i < (HEADERSIZE - CHECKSUMSIZE); i++){
-			checkArray[i] = packetLoad[i];
-		}
-		for(int i = HEADERSIZE - CHECKSUMSIZE; i < (HEADERSIZE - CHECKSUMSIZE) + dataLength; i++){
-			checkArray[i] = data[i - (HEADERSIZE - CHECKSUMSIZE)];
-		}
-		try {
-			checkSum = generateCheckSum(checkArray);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}		
-	}
-	
+	/**
+     * isCorrupt
+     * <p>
+     * Checks whether a packet represented as a byte array is corrupt using its
+     * checksum
+     * @param packetData - the packet (as byte array) to check for corruption
+     * @return packetCorrupt - whether the packet is corrupt
+     */
 	public static boolean isCorrupt(byte[] packetData) throws NoSuchAlgorithmException{
 		boolean packetCorrupt;
 		byte[] calculatedCheckSum = new byte[CHECKSUMSIZE];
@@ -169,7 +228,7 @@ public class Packet {
 		byte[] entireCalcCheckSum;
 		byte[] queryArray;
 		
-		//Generate byte array of all headers other than checksum and data
+		//Generate byte array of all headers other than checksum + data
 		queryArray = new byte[(HEADERSIZE -  CHECKSUMSIZE) + getDataLength(packetData)];
 		for(int i = 0; i < (HEADERSIZE -  CHECKSUMSIZE); i++){
 			queryArray[i] = packetData[i];
@@ -178,22 +237,28 @@ public class Packet {
 			queryArray[i] = packetData[i + (CHECKSUMSIZE)];
 		}
 		
-		//Calculate check sum of what's been received
+		//Calculate whole check sum of what's been received
 		entireCalcCheckSum = generateCheckSum(queryArray);
 		
-		//Collect actual check sum and calculated check sum (first 5 bytes)
+		//Collect stated check sum and calculated check sum (first 5 bytes)
 		for(int i = (HEADERSIZE -  CHECKSUMSIZE); i < HEADERSIZE; i++){
 			actualCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)] = packetData[i];
 			calculatedCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)] = entireCalcCheckSum[i - (HEADERSIZE -  CHECKSUMSIZE)];
 		}
+		//Compare checksums
 		packetCorrupt = !compareCheckSums(calculatedCheckSum, actualCheckSum);
 		return packetCorrupt;
 	}
 	
-	public static byte[] generateCheckSum(byte[] byteArray) throws NoSuchAlgorithmException{
-		return MessageDigest.getInstance("MD5").digest(byteArray);
-	}
-	
+
+	/**
+     * compareCheckSums
+     * <p>
+     * Compares two checksums
+     * @param checkSum1 - the first checksum 
+     * @param checkSum2 - the second checksum
+     * @return whether the checksums are equal
+     */
 	public static boolean compareCheckSums(byte[] checkSum1, byte[] checkSum2){
 		boolean checkSumsMatch = true;
 		for(int i = 0; i < CHECKSUMSIZE; i++){
@@ -204,19 +269,51 @@ public class Packet {
 		return checkSumsMatch;
 	}
 	
+	/**
+     * getDataLength
+     * <p>
+     * Returns the length of the data in a packet
+     * @param packetLoad - packet as a byte array
+     * @return length - the length of the data
+     */
 	public static int getDataLength(byte[] packetLoad){
-	    int val = 0x00000000;
-	    val |= ((0x000000FF & packetLoad[13]) << 8) | (0x000000FF & packetLoad[14]);
-	    return val;
+	    int length = 0x00000000;
+	    length |= ((0x000000FF & packetLoad[13]) << 8) | (0x000000FF & packetLoad[14]);
+	    return length;
 	}
 	
+	/**
+     * getSequenceNumber
+     * <p>
+     * Returns the sequence number of a packet
+     * @param packetLoad - packet as a byte array
+     * @return sequence number of a packet
+     */
 	public static int getSequenceNumber(byte[] packetLoad){
 		return getACKOrSeq(packetLoad, 4);
 	}
+	
+	/**
+     * getACKNumber
+     * <p>
+     * Returns the ack number of a packet
+     * @param packetLoad - packet as a byte array
+     * @return ack number of a packet
+     */
 	public static int getACKNumber(byte[] packetLoad){
 		return getACKOrSeq(packetLoad, 8);
 	}
 	
+	/**
+     * getACKOrSeq
+     * <p>
+     * Returns the ack or sequence number of a packet. Decides which to return
+     * based on startIndex passed in. If startIndex passed in is 4, then looking
+     * for sequence number, if it is 8, then looking for ack number.
+     * @param packetLoad - packet as a byte array
+     * @param startIndex - index of the bytes to read (ack index or seq index)
+     * @return ack or sequence number of a packet
+     */
 	private static int getACKOrSeq(byte[] packetLoad, int startIndex){
 		byte[] intBytes = new byte[4];
 		for(int i = startIndex; i < startIndex + 4; i++){
@@ -225,11 +322,24 @@ public class Packet {
 		return ByteBuffer.wrap(intBytes).getInt();
 	}
 	
-	//Only taking first 5 bytes of checksum
-	private void finalizePacket(){
-		//Add checkSum to packet
-		for(int i = HEADERSIZE - CHECKSUMSIZE; i < HEADERSIZE; i++){
-			packetLoad[i] = checkSum[i - (HEADERSIZE - CHECKSUMSIZE)];
-		}
+
+    /**
+     * getPacketLoad
+     * <p>
+     * Returns the packet (with headers and optional data) as a byte array
+     * @return packetLoad - packet as a byte array
+     */	
+	public byte[] getPacketLoad(){
+		return packetLoad;
+	}
+	
+	/**
+     * getCheckSum
+     * <p>
+     * Returns the packet's checksum as a byte array
+     * @return checkSum - checksum as a byte array
+     */
+	public byte[] getCheckSum(){
+		return checkSum;
 	}
 }
