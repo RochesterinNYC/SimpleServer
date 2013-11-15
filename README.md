@@ -87,7 +87,6 @@ Payload indices are as follows:
  * 00000010 = CORR (Received packet was corrupt)
  * 00000011 = FIN
 
-
 ACK Assignment:
 if (purposeCode is ACK), then ACK # = sequence number of last packet received
 if (purposeCode is DATA), then ACK# = sequence number of last packet received (packet before this one)
@@ -115,6 +114,8 @@ Other Notes:
 - Took number of segments resent to purely mean number of times any segment was retransmitted, not number of segment parts that required some type of retransmitting
 - Repeated simulations allowed due to datagram sockets being closed after successful TCP simulated transfer of file
 
+Extension of Part I:
+- The TCP Functionality is added as a functional module to part I. All the operations in part I are still intact.
 
 HW Part I:
 
