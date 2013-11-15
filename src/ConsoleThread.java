@@ -343,6 +343,13 @@ public class ConsoleThread extends Thread{
 		System.out.println("    " + print);
 	}
 	
+    /**
+    * fileSend
+    * <p>
+    * Sends a file to a receiver as packets through simulated TCP.
+    * Arguments are as follows: 
+    * "sender [file name] [remote IP] [remote port] [ack port number] [window size] [log file name]"
+    */		
 	private void fileSend(){
 		boolean senderCommandValid = false;
 		String[] arguments;

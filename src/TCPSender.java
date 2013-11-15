@@ -71,7 +71,7 @@ public class TCPSender {
 		try {
 			this.packetSocket = new DatagramSocket(this.ackPort);			
 		} catch (SocketException e) {
-			e.printStackTrace();
+			System.out.println("Error has occurred with socket creation.");
 		} 
 		processFile();
 	}
@@ -89,8 +89,7 @@ public class TCPSender {
 			fileReader = new FileInputStream(queryFile);
 			numPackets = (int) Math.ceil(queryFile.length() / (double)(SEGSIZE - HEADSIZE));
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error has occurred with file processing.");
 		}
 	}
 	
@@ -169,11 +168,10 @@ public class TCPSender {
 			logger.close();
 		}
 		catch (IOException e) {
-			e.printStackTrace();
-		}
+			System.out.println("Error has occurred with packet sending.");
+		} 
 		catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error has occurred with checksum calculations.");
 		}
 		
 		packetSocket.close();
@@ -207,7 +205,7 @@ public class TCPSender {
 			}
 		}
 		catch(IOException e){
-			//Fill
+			System.out.println("Error has occurred with packet construction.");
 		}
 		return packetSet;
 	}
@@ -222,8 +220,9 @@ public class TCPSender {
 		this.timeOut = (long) (0.25 * timeOut + 0.75 * roundTripTime);
 		try {
 			packetSocket.setSoTimeout((int) timeOut);
-		} catch (SocketException e) {
-			e.printStackTrace();
+		} 
+		catch (SocketException e) {
+			System.out.println("Error has occurred with socket timeouts.");
 		}
 	}
 

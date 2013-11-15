@@ -190,7 +190,6 @@ public class ServerThread extends Thread{
     				send();
     			}
     			else if(choice.trim().equals("file")){
-    				waitTCPFinish();
     			}
     			else if(choice.trim().equals("logout")){
     				logout();
@@ -422,9 +421,5 @@ public class ServerThread extends Thread{
     public String outputFromClient(){
     	return clientToServer.nextLine();
 	}
-    
-    public void waitTCPFinish(){
-    	//tcpFileSend();
-    }
     
 }

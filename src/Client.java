@@ -156,7 +156,7 @@ public class Client {
 				send();
 			}
 			else if (command.equals("file")){
-				file();
+				fileReceive();
 			}
 			else if (command.equals("logout")){
 				logout();
@@ -390,8 +390,14 @@ public class Client {
     	return serverToClient.nextLine();
 	}
     
-    
-    public void file(){
+    /**
+     * fileReceive
+     * <p>
+     * Receives a file from a sender as packets through simulated TCP.
+     * Arguments as follows:
+     * "receiver [file name] [listening port] [remote IP] [remote port] [log file name]"
+     */
+    public void fileReceive(){
     	boolean receiverCommandValid = false;
 		String[] arguments;
     	do{
@@ -410,13 +416,12 @@ public class Client {
     	try {
 			TCPReceiver receiver = new TCPReceiver(arguments[1], Integer.parseInt(arguments[2]), InetAddress.getByName(arguments[3]), Integer.parseInt(arguments[4]), arguments[5]);
 			receiver.receive();
-    	} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+    	}     	
+    	catch (NumberFormatException e) {
+			System.out.println("Please use valid argument parameters.");
+		} 
+    	catch (UnknownHostException e) {
+			System.out.println("Please use valid argument parameters.");
 		}
-   }
-        
+   }        
 }

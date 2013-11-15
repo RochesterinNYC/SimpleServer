@@ -57,7 +57,7 @@ public class TCPReceiver {
 		try {
 			this.packetSocket = new DatagramSocket(this.listenPort);
 		} catch (SocketException e) {
-			e.printStackTrace();
+			System.out.println("Error has occurred with socket creation.");
 		} 
 	}
 
@@ -120,9 +120,9 @@ public class TCPReceiver {
 			}   
 		}
 		catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Error has occurred with packet receiving.");
 		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			System.out.println("Error has occurred with checksum calculations.");
 		}	
 		compileFile(fileParts);
 		if(!logFileName.equals("stdout")){
@@ -158,12 +158,10 @@ public class TCPReceiver {
 			fos.close();
 		} 
 		catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error has occurred with file reconstruction.");
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Error has occurred with file reconstruction.");
 		}
 	}
 	

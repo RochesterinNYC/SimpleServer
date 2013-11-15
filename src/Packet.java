@@ -137,7 +137,7 @@ public class Packet {
 		try {
 			checkSum = generateCheckSum(checkArray);
 		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
+			System.out.println("Error has occurred with calculating checksum.");
 		}		
 	}
 	
