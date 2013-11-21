@@ -1,4 +1,11 @@
 SimpleServer (W4119 : Computer Networks)
+
+This is a Java implementation of a multi-threaded server and client that offers such features as logging in/out, messaging, broadcasting, checking information about other logged on client users.
+
+Additionally, file transmission is available through simulated TCP by way of UDP and TCP protocol.
+
+Some other implemented features include server logging, guaranteed file delivery, and a basic, working console for the server admin that implements some admin functions.
+
 - jrw2175
 
 HW Assignment II:
