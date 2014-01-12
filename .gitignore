@@ -1,5 +1,7 @@
 .settings
-*.class
 .project
+.classpath
+
 *.txt
+*.class
 
